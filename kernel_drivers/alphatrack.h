@@ -39,31 +39,6 @@ enum LightID {
         LIGHT_LOOP
 };
 
-static const char *Lightname[] = { "eq",
-"out",
-"f2",
-"send",
-"in",
-"f1",
-"pan",
-"undef1",
-"undef2",
-"shift",
-"mute",
-"tracksolo",
-"trackrec",
-"read",
-"write",
-"anysolo",
-"auto",
-"f4",
-"record",
-"window",
-"plugin",
-"f3",
-"loop",
-NULL };
-
 #define BUTTONMASK_BATTERY     0x00004000
 #define BUTTONMASK_BACKLIGHT   0x00008000
 #define BUTTONMASK_FASTFORWARD 0x04000000
@@ -88,23 +63,23 @@ NULL };
 #define BUTTONMASK_PRESS3      0x00002020
 
 // last 3 bytes are the slider position
-// 40 is the actual slider moving, the most sig bits, and 3 lsb 
+// 40 is the actual slider moving, the most sig bits, and 3 lsb
 
-#define BUTTONMASK_FLIP         0x40000000      
-#define BUTTONMASK_F1           0x00100000    
-#define BUTTONMASK_F2           0x00400000    
-#define BUTTONMASK_F3           0x00200000    
-#define BUTTONMASK_F4           0x00080000    
-#define BUTTONMASK_PAN          0x00000200      
-#define BUTTONMASK_SEND         0x00000800      
-#define BUTTONMASK_EQ           0x00004000    
-#define BUTTONMASK_PLUGIN       0x00000400      
-#define BUTTONMASK_AUTO         0x00000100      
+#define BUTTONMASK_FLIP         0x40000000
+#define BUTTONMASK_F1           0x00100000
+#define BUTTONMASK_F2           0x00400000
+#define BUTTONMASK_F3           0x00200000
+#define BUTTONMASK_F4           0x00080000
+#define BUTTONMASK_PAN          0x00000200
+#define BUTTONMASK_SEND         0x00000800
+#define BUTTONMASK_EQ           0x00004000
+#define BUTTONMASK_PLUGIN       0x00000400
+#define BUTTONMASK_AUTO         0x00000100
 
 
 // #define BUTTONMASK_FOOTSWITCH FIXME
 
-// Lookup. name. midi out. midi in. 
+// Lookup. name. midi out. midi in.
 
 struct buttonmap_t {
 	u32 mask;

@@ -7,7 +7,7 @@
  *
  * Copyright (C) 2004 Greg Kroah-Hartman (greg@kroah.com)
  * Copyright (C) 2005 Michael Hund <mhund@ld-didactic.de>
- * 
+ *
  * The ldusb driver was, in turn, derived from Lego USB Tower driver
  * Copyright (C) 2003 David Glance <advidgsf@sourceforge.net>
  *		 2001-2004 Juergen Stuber <starblue@users.sourceforge.net>
@@ -25,10 +25,10 @@
  */
 
 /* Note: this currently uses a dumb ringbuffer for reads and writes.
- * A more optimal driver would cache and kill off outstanding urbs that are 
+ * A more optimal driver would cache and kill off outstanding urbs that are
  * now invalid, and ignore ones that already were in the queue but valid
  * as we only have 30 commands for the alphatrack. In particular this is
- * key for getting lights to flash in time as otherwise many commands 
+ * key for getting lights to flash in time as otherwise many commands
  * can be buffered up before the light change makes it to the interface.
 */
 
@@ -82,7 +82,6 @@ MODULE_SUPPORTED_DEVICE("Frontier Designs Alphatrack Control Surface");
 
 /* These aren't done yet */
 
-#define ALPHATRACK_HAVE_SYSFS 0
 #define SUPPRESS_EXTRA_ONLINE_EVENTS 0
 #define BUFFERED_WRITES 0
 #define SUPPRESS_EXTRA_OFFLINE_EVENTS 0
@@ -101,16 +100,10 @@ static int debug = 0;
 /* Use our own dbg macro */
 #define dbg_info(dev, format, arg...) do { if (debug) dev_info(dev , format , ## arg); } while (0)
 
-#if 0
-#define alphatrack_ocmd_info(dev, cmd, format, arg...) do { if (debug) ocmd_info(dev , cmd , format, ## arg); } while (0)
+#define alphatrack_ocmd_info(dev, cmd, format, arg...)
 
-#define alphatrack_icmd_info(dev, cmd, format, arg...) do { if (debug) icmd_info(dev , cmd, format, ## arg); } while (0)
-#else
-#define alphatrack_ocmd_info(dev, cmd, format, arg...) 
+#define alphatrack_icmd_info(dev, cmd, format, arg...)
 
-#define alphatrack_icmd_info(dev, cmd, format, arg...) 
-
-#endif
 
 /* Module parameters */
 
@@ -133,7 +126,7 @@ static int write_buffer_size = WRITE_BUFFER_SIZE;
 module_param(write_buffer_size, int,  S_IRUGO);
 MODULE_PARM_DESC(write_buffer_size, "Write buffer size");
 
-/* 
+/*
  * Increase the interval for debugging purposes.
  * or set to 1 to use the standard interval from the endpoint descriptors.
  */
@@ -188,7 +181,7 @@ struct usb_alphatrack {
 	unsigned char offline; /* if the device is out of range or asleep */
 	unsigned char verbose; /* be verbose in error reporting */
 	unsigned char  last_cmd[OUTPUT_CMD_SIZE];
-	unsigned char  screen[32]; 
+	unsigned char  screen[32];
 };
 
 /* prevent races between open() and disconnect() */
@@ -197,23 +190,6 @@ static DEFINE_MUTEX(disconnect_mutex);
 /* forward declaration */
 
 static struct usb_driver usb_alphatrack_driver;
-
-static void icmd_info(struct usb_alphatrack *dev, char *cmd, char *str, char *a) {
-/*
-if (dev->verbose) {
-} else {
-} 
-*/
-}
-
-static void ocmd_info(struct usb_alphatrack *dev, char *cmd, char *str, char* a) {
-/*
-if (dev->verbose) {
-} else {
-} 
-*/
-}
-
 
 /**
  *	usb_alphatrack_abort_transfers
@@ -231,12 +207,6 @@ static void usb_alphatrack_abort_transfers(struct usb_alphatrack *dev)
 		if (dev->intf)
 			usb_kill_urb(dev->interrupt_out_urb);
 }
-
-#if ALPHATRACK_HAVE_SYSFS
-/* lots and lots and lots of sysfs stuff */
-/* Currently borked, probably useless */
-#include "alphatrack_sysfs.c"
-#endif
 
 /**
  *	usb_alphatrack_delete
@@ -261,7 +231,6 @@ static void usb_alphatrack_interrupt_in_callback(struct urb *urb)
 	struct usb_alphatrack *dev = urb->context;
 	unsigned int next_ring_head;
 	int retval = -1;
-	int *iptr;
 
 	if (urb->status) {
 		if (urb->status == -ENOENT ||
@@ -270,14 +239,14 @@ static void usb_alphatrack_interrupt_in_callback(struct urb *urb)
 			goto exit;
 		} else {
 			dbg_info(&dev->intf->dev, "%s: nonzero status received: %d\n",
-				 __FUNCTION__, urb->status);
+				 __func__, urb->status);
 			goto resubmit; /* maybe we can recover */
 		}
 	}
-    
+
 	if (urb->actual_length != INPUT_CMD_SIZE) {
 		dev_warn(&dev->intf->dev,
-			 "Urb length was %d bytes!! Do something intelligent \n", urb->actual_length); 
+			 "Urb length was %d bytes!! Do something intelligent \n", urb->actual_length);
 	} else {
 		 alphatrack_ocmd_info(&dev->intf->dev,&(*dev->ring_buffer)[dev->ring_tail].cmd,"%s", "bla");
 		 if(memcmp(dev->interrupt_in_buffer,dev->oldi_buffer,INPUT_CMD_SIZE)==0) {
@@ -291,12 +260,12 @@ static void usb_alphatrack_interrupt_in_callback(struct urb *urb)
 /* Always pass one offline event up the stack */
 		if(dev->offline > 0 && dev->interrupt_in_buffer[1] != 0xff) { dev->offline = 0; }
 		if(dev->offline == 0 && dev->interrupt_in_buffer[1] == 0xff) { dev->offline = 1; }
-#endif 
-		dbg_info(&dev->intf->dev, "%s: head, tail are %x, %x\n", __FUNCTION__,dev->ring_head,dev->ring_tail);
+#endif
+		dbg_info(&dev->intf->dev, "%s: head, tail are %x, %x\n", __func__,dev->ring_head,dev->ring_tail);
 		next_ring_head = (dev->ring_head+1) % ring_buffer_size;
-	
+
 		if (next_ring_head != dev->ring_tail) {
-			memcpy(&((*dev->ring_buffer)[dev->ring_head]), 
+			memcpy(&((*dev->ring_buffer)[dev->ring_head]),
 						 dev->interrupt_in_buffer, urb->actual_length);
 			dev->ring_head = next_ring_head;
 			retval = 0;
@@ -307,17 +276,17 @@ static void usb_alphatrack_interrupt_in_callback(struct urb *urb)
 				 urb->actual_length);
 			memset(dev->interrupt_in_buffer, 0, urb->actual_length);
 		}
-	} 
+	}
 
 resubmit:
 	/* resubmit if we're still running */
 	if (dev->interrupt_in_running && dev->intf) {
-		retval = usb_submit_urb(dev->interrupt_in_urb, GFP_ATOMIC); 
+		retval = usb_submit_urb(dev->interrupt_in_urb, GFP_ATOMIC);
 		if (retval)
 			dev_err(&dev->intf->dev,
 				"usb_submit_urb failed (%d)\n", retval);
 	}
-    
+
 exit:
 	dev->interrupt_in_done = 1;
 	wake_up_interruptible(&dev->read_wait);
@@ -336,7 +305,7 @@ static void usb_alphatrack_interrupt_out_callback(struct urb *urb)
 			     urb->status == -ESHUTDOWN))
 		dbg_info(&dev->intf->dev,
 			 "%s - nonzero write interrupt status received: %d\n",
-			 __FUNCTION__, urb->status);
+			 __func__, urb->status);
 	atomic_dec(&dev->writes_pending);
 	dev->interrupt_out_busy = 0;
 	wake_up_interruptible(&dev->write_wait);
@@ -361,7 +330,7 @@ static int usb_alphatrack_open(struct inode *inode, struct file *file)
 
 	if (!interface) {
 		err("%s - error, can't find device for minor %d\n",
-		     __FUNCTION__, subminor);
+		     __func__, subminor);
 		retval = -ENODEV;
 		goto unlock_disconnect_exit;
 	}
@@ -528,11 +497,11 @@ static ssize_t usb_alphatrack_read(struct file *file, char __user *buffer, size_
 									retval = -EAGAIN;
 									goto unlock_exit;
 					}
-					dev->interrupt_in_done = 0 ; 
+					dev->interrupt_in_done = 0 ;
 					retval = wait_event_interruptible(dev->read_wait, dev->interrupt_in_done);
 					if (retval < 0) {
 									goto unlock_exit;
-					} 
+					}
 	}
 
 	alphatrack_ocmd_info(&dev->intf->dev, &(*dev->ring_buffer)[dev->ring_tail].cmd, "%s", ": copying to userspace");
@@ -545,7 +514,7 @@ static ssize_t usb_alphatrack_read(struct file *file, char __user *buffer, size_
 						 }
 						 dev->ring_tail = (dev->ring_tail+1) % ring_buffer_size;
 						 c+=INPUT_CMD_SIZE;
-						 dbg_info(&dev->intf->dev, "%s: head, tail are %x, %x\n", __FUNCTION__,dev->ring_head,dev->ring_tail);
+						 dbg_info(&dev->intf->dev, "%s: head, tail are %x, %x\n", __func__,dev->ring_head,dev->ring_tail);
 	   }
 	   retval = c;
 
@@ -604,7 +573,7 @@ static ssize_t usb_alphatrack_write(struct file *file, const char __user *buffer
 	if (bytes_to_write < count)
 		dev_warn(&dev->intf->dev, "Write buffer overflow, %zd bytes dropped\n",count-bytes_to_write);
 
-	dbg_info(&dev->intf->dev, "%s: count = %zd, bytes_to_write = %zd\n", __FUNCTION__, count, bytes_to_write);
+	dbg_info(&dev->intf->dev, "%s: count = %zd, bytes_to_write = %zd\n", __func__, count, bytes_to_write);
 
 	if (copy_from_user(dev->interrupt_out_buffer, buffer, bytes_to_write)) {
 		retval = -EFAULT;
@@ -715,7 +684,7 @@ static int usb_alphatrack_probe(struct usb_interface *intf, const struct usb_dev
 	}
 	if (dev->interrupt_out_endpoint == NULL)
 		dev_warn(&intf->dev, "Interrupt out endpoint not found (using control endpoint instead)\n");
-	
+
 	dev->interrupt_in_endpoint_size = le16_to_cpu(dev->interrupt_in_endpoint->wMaxPacketSize);
 
 	if (dev->interrupt_in_endpoint_size != 64)
@@ -727,21 +696,21 @@ static int usb_alphatrack_probe(struct usb_interface *intf, const struct usb_dev
 
 	/* FIXME - there are more usb_alloc routines for dma correctness. Needed? */
 
-//	dev->ring_buffer = kmalloc((true_size*sizeof(struct alphatrack_icmd))+12, GFP_KERNEL); 
-	dev->ring_buffer = kmalloc((true_size*sizeof(struct alphatrack_icmd)), GFP_KERNEL); 
+//	dev->ring_buffer = kmalloc((true_size*sizeof(struct alphatrack_icmd))+12, GFP_KERNEL);
+	dev->ring_buffer = kmalloc((true_size*sizeof(struct alphatrack_icmd)), GFP_KERNEL);
 
 	if (!dev->ring_buffer) {
 		dev_err(&intf->dev, "Couldn't allocate input ring_buffer of size %d\n",true_size);
 		goto error;
 	}
 
-	dev->interrupt_in_buffer = kmalloc(dev->interrupt_in_endpoint_size, GFP_KERNEL); 
+	dev->interrupt_in_buffer = kmalloc(dev->interrupt_in_endpoint_size, GFP_KERNEL);
 
 	if (!dev->interrupt_in_buffer) {
 		dev_err(&intf->dev, "Couldn't allocate interrupt_in_buffer\n");
 		goto error;
 	}
-	dev->oldi_buffer = kmalloc(dev->interrupt_in_endpoint_size, GFP_KERNEL); 
+	dev->oldi_buffer = kmalloc(dev->interrupt_in_endpoint_size, GFP_KERNEL);
 	if (!dev->oldi_buffer) {
 		dev_err(&intf->dev, "Couldn't allocate old buffer\n");
 		goto error;
@@ -799,23 +768,6 @@ static int usb_alphatrack_probe(struct usb_interface *intf, const struct usb_dev
 	/* let the user know what node this device is now attached to */
 	dev_info(&intf->dev, "Alphatrack Device #%d now attached to major %d minor %d\n",
 		(intf->minor - USB_ALPHATRACK_MINOR_BASE), USB_MAJOR, intf->minor);
-
-#if ALPHATRACK_HAVE_SYSFS
-	if((retval = device_create_file(&intf->dev, &dev_attr_event))) goto error;
-	if((retval = device_create_file(&intf->dev, &dev_attr_dump_state))) goto error;
-	if((retval = device_create_file(&intf->dev, &dev_attr_enable))) goto error;
-	if((retval = device_create_file(&intf->dev, &dev_attr_offline))) goto error;
-
-  /* exercise sysfs */
-
-	set_lights("32767"); // turn on all the lights
-	set_fader0("1023"); // Move fader to max
-	set_screen("INITIALIZING               ALPHATRACK...");
-	set_lights("0"); 
-	set_fader0("0");
-	set_screen("                                        ");
-
-#endif
 
 exit:
 	return retval;
