@@ -1,10 +1,3 @@
-#define show_set_bit(a) show_set_mbit(alphatrack, a)
-#define show_set_cmd(a) show_set_mcmd(alphatrack, a)
-#define show_set_int(a) show_set_mint(alphatrack, a)
-#define show_set_char(a) show_set_mchar(alphatrack, a)
-#define show_set_light(a) show_set_ebit(alphatrack, LightID, lights, a)
-#define show_set_button(a) show_set_ebit(alphatrack, ButtonID, button, a)
-
 struct alphatrack_icmd {
 	unsigned char cmd[12];
 };
@@ -13,6 +6,9 @@ struct alphatrack_ocmd {
 	unsigned char cmd[8];
 };
 
+/* These are unused by the present driver but provide documentation for the
+ * userspace API.
+ */
 enum LightID {
 	LIGHT_EQ = 0,
 	LIGHT_OUT,
@@ -62,10 +58,10 @@ enum LightID {
 #define BUTTONMASK_PRESS2      0x00008010
 #define BUTTONMASK_PRESS3      0x00002020
 
-/*
- * last 3 bytes are the slider position
- *  40 is the actual slider moving, the most sig bits, and 3 lsb
+/* last 3 bytes are the slider position
+ * 40 is the actual slider moving, the most sig bits, and 3 lsb
  */
+
 #define BUTTONMASK_FLIP         0x40000000
 #define BUTTONMASK_F1           0x00100000
 #define BUTTONMASK_F2           0x00400000
@@ -78,14 +74,3 @@ enum LightID {
 #define BUTTONMASK_AUTO         0x00000100
 
 /* #define BUTTONMASK_FOOTSWITCH FIXME */
-
-/* Lookup. name. midi out. midi in. */
-
-struct buttonmap_t {
-	u32 mask;
-	short midi_in;
-	short midi_out;
-	char *name;
-/*      void (*function) (buttonmap_t *); */
-	void (*function) (void);
-};
