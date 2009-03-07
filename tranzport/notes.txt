@@ -80,3 +80,9 @@ Over in session we have
 	sigc::signal<void> SoloChanged;
 
 	static sigc::signal<void> SendFeedback;
+
+MORE ISSUES
+
+Loop light needs to unlight on a stop
+Punch light or any solo should flicker during punch, or record light
+Record light should flash during recording
