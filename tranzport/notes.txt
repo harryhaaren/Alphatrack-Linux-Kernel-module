@@ -83,6 +83,12 @@ Over in session we have
 
 MORE ISSUES
 
-Loop light needs to unlight on a stop
+Loop light needs to unlight on a stop. Or we need to 
+do saner things when we are in "loop mode" like
+shift-rewind go to the beginning of the loop. And
+play goes into loop mode in that case.
+
 Punch light or any solo should flicker during punch, or record light
 Record light should flash during recording
+It would be nice if markers went by while playing
+Display, in slave mode, should slave to the first clock's format

@@ -306,20 +306,26 @@ TranzportControlProtocol::show_bbt (nframes64_t where)
 
 		sprintf (buf, "%04" PRIu32 "|%1" PRIu32 "|%04" PRIu32, bbt.bars,bbt.beats,bbt.ticks);
 		print (1,9,buf);
-		TempoMap::Metric m (session->tempo_map().metric_at (where));
+		/*TempoMap::Metric m (session->tempo_map().metric_at (where));
     
 		// the lights stop working well at above 100 bpm so don't bother
-		if(m.tempo().beats_per_minute() < 101.0 && (speed > 0.0)) {
+//		if(m.tempo().beats_per_minute() < 101.0 && (speed > 0.0)) {
+  This really needs write throttling to be perfect to work at all.
+   Disabled for now
+		if(speed > 0.0) {
 
 			// something else can reset these, so we need to
 
 			lights_pending[LightRecord] = false;
 			lights_pending[LightAnysolo] = false;
+			// this should lead the beat by 10 ms at least. FIXME
 			switch(last_beats) {
-			case 1: if(last_ticks < 250 || last_ticks >= 0) lights_pending[LightRecord] = true; break;
+			case 1: if(last_ticks < 250) lights_pending[LightRecord] = true; break;
 			default: if(last_ticks < 250) lights_pending[LightAnysolo] = true;
 			}
 		}
+		*/
+
 	}
 }
 
