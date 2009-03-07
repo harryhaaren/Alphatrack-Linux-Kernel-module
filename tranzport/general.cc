@@ -245,6 +245,9 @@ TranzportControlProtocol::next_marker ()
 
 // FIXME: pay attention to the snap-to settings
 // FIXME: Make reversible
+// FIXME: session->locations()->next_available_name(markername,"Tranz");
+// Looks more correct
+
 void       
 TranzportControlProtocol::add_marker_snapped ()
 {

@@ -331,25 +331,33 @@ TranzportControlProtocol::button_event_add_press (bool shifted)
 void
 TranzportControlProtocol::button_event_add_release (bool shifted)
 {
+  // FIXME nframes64_t for ardour3?
+  nframes_t start, end;
+  string loop;
   // The usual sequence is [ shift ] - [ loop or punch ] - add 
   if(loop_held | punch_held) {
       complex_mode_change = 1;
     if (loop_held) {
       Location *l = session->locations()->auto_loop_location();
-      session->begin_reversible_command (_("change loop range"));
+      if(l) {
+      start = l->start();
+      end = l->end();
+      loop = l->name(); // clever way to avoid one intl issue
+      } else {
+	start = end = ;
+	loop = _("Loop"); // not clever enough for intl issue
+      }
+      session->begin_reversible_command (_("change loop range")); // not so clever
       XMLNode &before = session->locations()->get_state();
-      session->locations()->remove(l);
-      
+      if(l) session->locations()->remove(l);
       if(shifted) {
-	l->set_end(session->locations()->current()->end());
-	session->locations()->add (l, true);
+	end = 800.0;
 	notify("LOOP END ADDED ");
       } else {
-	l->set_start(session->locations()->current()->start());
-	session->locations()->add (l, true);
+	start = 60000.0;
 	notify("LOOP START ADD ");
       }
-
+      session->locations()->add (new Location (start, end, loop, Location::Flags (Location::IsAutoLoop)),true);
       XMLNode &after = session->locations()->get_state();
       session->add_command(new MementoCommand<Locations>(*(session->locations()), &before, &after));
       session->commit_reversible_command ();
@@ -533,19 +541,4 @@ TranzportControlProtocol::button_event_footswitch_release (bool shifted)
 	  session->request_play_loop (false);
 	  transport_play ();
 	}
-}
-
-
-// Possible new api example
-// tries harder to do the right thing if we somehow missed a button down event
-// which currently happens... a lot.
-
-void button_event_mute (bool pressed, bool shifted)
-{
-	static int was_pressed = 0;
-	if((!pressed && !was_pressed) || pressed) { 
-		was_pressed = 1;
-	} 
-
-	was_pressed = 0;
 }

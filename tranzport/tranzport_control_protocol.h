@@ -305,6 +305,7 @@ private:
 	void enter_bling_mode();
 
 	void change_marker(int steps);
+	// these are obsolete
 	void next_marker (); // basicui doesn't give me enough info
 	void prev_marker (); 
 
@@ -387,13 +388,9 @@ private:
 	void button_event_footswitch_release (bool shifted);
 
 	// More capable marker routines instead of those from BasicUI
-	// Wish I could have overloaded them, but....
 	void add_marker_snapped();
 	void next_marker_any();
 	void prev_marker_any();
-
-	// new api - still thinking about it
-	void button_event_mute (bool pressed, bool shifted);
 };
 
 
