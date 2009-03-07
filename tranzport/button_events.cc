@@ -293,13 +293,13 @@ TranzportControlProtocol::button_event_rewind_press (bool shifted)
 	if (shifted) {
 		goto_start ();
 	} else {
-		float speed = transport_speed();
+		float speed = session->transport_speed();
 		if(speed > -2.0) {
 			rewind ();
 		} else {
 		if(speed <= -2.0) {
 			speed += -1.0;
-			set_transport_speed(speed);
+			session->request_transport_speed(speed < -8.0 ? -8.0 : speed);
 			}
 		}	
 	}
@@ -316,13 +316,13 @@ TranzportControlProtocol::button_event_fastforward_press (bool shifted)
 	if (shifted) {
 		goto_end ();
 	} else {
-		float speed = transport_speed();
+		float speed = session->transport_speed();
 		if(speed < 2.0) {
 			ffwd ();
 		} else {
 		if(speed >= 2.0) {
 			speed += 1.0;
-			set_transport_speed(speed);
+			session->request_transport_speed(speed > 8.0 ? 8.0 : speed);
 			}
 		}	
 	}
