@@ -8,6 +8,15 @@
 
 #include "i18n.h"
 
+static inline void FUDGE_64BIT_INC(nframes64_t &a, int dir) {
+	switch(dir) {
+		case 0: break;
+		case 1: a++;
+		case -1: a = ZEROIFNEG(--a);
+		default: break;
+	}
+}
+
 XMLNode *TranzportControlProtocol::editor_settings ()
 {
         XMLNode* node = 0;
@@ -119,10 +128,9 @@ TranzportControlProtocol::snap_to_internal (nframes64_t& start, int32_t directio
   switch (snap_to) {
   case Editing::SnapToCDFrame:
     if(snap_mode == Editing::SnapOff) {
-      if(dir > 0) start++; // move by samples instead
-      if(dir < 0) start--;
+      FUDGE_64BIT_INC(start,dir); // move by samples instead
     } else {
-    if(dir < 0) start--; else start++;
+      FUDGE_64BIT_INC(start,dir); // move by samples instead
 
       if (((dir == 0) && 
 	   (start % (one_second/75) > (one_second/75) / 2)) || 
@@ -135,7 +143,7 @@ TranzportControlProtocol::snap_to_internal (nframes64_t& start, int32_t directio
     break;
     
   case Editing::SnapToSMPTEFrame:
-    if(dir < 0) start--; else start++;
+      FUDGE_64BIT_INC(start,dir); 
     if (((dir == 0) && (fmod((double)start, (double)session->frames_per_smpte_frame()) > (session->frames_per_smpte_frame() / 2))) || (dir > 0)) {
       start = (nframes64_t) (ceil ((double) start / session->frames_per_smpte_frame()) * session->frames_per_smpte_frame());
     } else {
@@ -144,7 +152,7 @@ TranzportControlProtocol::snap_to_internal (nframes64_t& start, int32_t directio
     break;
     
   case Editing::SnapToSMPTESeconds:
-    if(dir < 0) start--; else start++;
+    FUDGE_64BIT_INC(start,dir); 
     if (session->smpte_offset_negative())
       {
 	start += session->smpte_offset ();
@@ -166,7 +174,7 @@ TranzportControlProtocol::snap_to_internal (nframes64_t& start, int32_t directio
     break;
     
   case Editing::SnapToSMPTEMinutes:
-    if(dir < 0) start--; else start++;
+    FUDGE_64BIT_INC(start,dir); 
     if (session->smpte_offset_negative())
       {
 	start += session->smpte_offset ();
@@ -187,7 +195,7 @@ TranzportControlProtocol::snap_to_internal (nframes64_t& start, int32_t directio
     break;
     
   case Editing::SnapToSeconds:
-    if(dir < 0) start--; else start++;
+    FUDGE_64BIT_INC(start,dir);
     if (((dir == 0) && (start % one_second > one_second / 2)) || (dir > 0)) {
       start = (nframes64_t) ceil ((double) start / one_second) * one_second;
     } else {
@@ -196,8 +204,8 @@ TranzportControlProtocol::snap_to_internal (nframes64_t& start, int32_t directio
     break;
     
   case Editing::SnapToMinutes:
-    if(dir < 0) start--; else start++;
-    if (((dir == 0) && (start % one_minute > one_minute / 2)) || (dir > 0)) {
+          FUDGE_64BIT_INC(start,dir);
+if (((dir == 0) && (start % one_minute > one_minute / 2)) || (dir > 0)) {
       start = (nframes64_t) ceil ((double) start / one_minute) * one_minute;
     } else {
       start = (nframes64_t) floor ((double) start / one_minute) * one_minute;
@@ -205,38 +213,38 @@ TranzportControlProtocol::snap_to_internal (nframes64_t& start, int32_t directio
     break;
     
   case Editing::SnapToBar:
-    if(dir < 0) start--; else start++;
-    start = session->tempo_map().round_to_bar (start, dir);
+        FUDGE_64BIT_INC(start,dir);
+	start = session->tempo_map().round_to_bar (start, dir);
     break;
     
   case Editing::SnapToBeat:
-    if(dir < 0) start--; // else start++
+    FUDGE_64BIT_INC(start,dir);
     newstart = start;
     start = session->tempo_map().round_to_beat (start, dir);
     break;
     
   case Editing::SnapToAThirtysecondBeat:
-    if(dir < 0) start--; else start++;
+    FUDGE_64BIT_INC(start,dir);
     start = session->tempo_map().round_to_beat_subdivision (start, 32);
     break;
     
   case Editing::SnapToASixteenthBeat:
-    if(dir < 0) start--; else start++;
+    FUDGE_64BIT_INC(start,dir);
     start = session->tempo_map().round_to_beat_subdivision (start, 16);
     break;
     
   case Editing::SnapToAEighthBeat:
-    if(dir < 0) start--; else start++;
+    FUDGE_64BIT_INC(start,dir);
     start = session->tempo_map().round_to_beat_subdivision (start, 8);
     break;
     
   case Editing::SnapToAQuarterBeat:
-    if(dir < 0) start--; else start++;
+    FUDGE_64BIT_INC(start,dir);
     start = session->tempo_map().round_to_beat_subdivision (start, 4);
     break;
     
   case Editing::SnapToAThirdBeat:
-    if(dir < 0) start--; else start++;
+    FUDGE_64BIT_INC(start,dir);
     start = session->tempo_map().round_to_beat_subdivision (start, 3);
     break;
     
@@ -244,6 +252,7 @@ TranzportControlProtocol::snap_to_internal (nframes64_t& start, int32_t directio
     if (for_mark) {
       return;
     }
+    FUDGE_64BIT_INC(start,dir);
     
     before = session->locations()->first_location_before (start);
     after = session->locations()->first_location_after (start);
@@ -283,7 +292,7 @@ TranzportControlProtocol::snap_to_internal (nframes64_t& start, int32_t directio
   case Editing::SnapToRegionStart:
   case Editing::SnapToRegionEnd:
   case Editing::SnapToRegionSync:
-  case Editing::SnapToRegionBoundary:
+  case Editing::SnapToRegionBoundary: notify("No snap to regions"); 
     /*		if (!region_boundary_cache.empty()) {
 		vector<nframes64_t>::iterator i;
 		

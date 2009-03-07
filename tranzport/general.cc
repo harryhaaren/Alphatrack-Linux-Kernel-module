@@ -49,7 +49,7 @@ void TranzportControlProtocol::notify(const char *msg) {
 		strcpy(last_notify_msg,msg);
 	} else {
 		strncpy(last_notify_msg,msg,16);
-		last_notify_msg[16] = '\n';
+		last_notify_msg[16] = '\000';
 	}
 }
 
@@ -351,5 +351,6 @@ TranzportControlProtocol::print_noretry (int row, int col, const char *text)
 
 void TranzportControlProtocol::invalidate() 
 {
-	lcd_damage(); lights_invalidate(); screen_invalidate(); // one of these days lcds can be fine but screens not
+	lcd_damage(); lights_invalidate(); screen_invalidate(); 
+	// one of these days lcds can be fine but screens not
 }

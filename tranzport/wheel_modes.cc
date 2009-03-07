@@ -97,20 +97,11 @@ TranzportControlProtocol::show_wheel_mode ()
 {
 	string text;
 
-	// if(session->transport_speed() != 0) {
-	//    if session-transport_speed() < 1.0) show_big_bar/beat
-	//    if ? greater. dont
-
-	if(session->transport_speed() != 0) {
-		show_mini_meter(); 
-	} else {
-		
-		switch (wheel_mode) {
+	switch (wheel_mode) {
 
 		case WheelTimelineSlave:
 			text = "Slav";
 			break;
-
 		case WheelTimeline:
 			text = "Time";
 			break;
@@ -122,7 +113,7 @@ TranzportControlProtocol::show_wheel_mode ()
 			break;
 		}
 		
-		switch (wheel_shift_mode) {
+	switch (wheel_shift_mode) {
 		case WheelShiftGain:
 			text += ":Gain";
 			break;
@@ -140,6 +131,6 @@ TranzportControlProtocol::show_wheel_mode ()
 			break;
 		}
 		
-		print (1, 0, text.c_str());
-	} 
+	notify(text.c_str());
 }
+

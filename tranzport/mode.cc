@@ -26,7 +26,7 @@ TranzportControlProtocol::normal_update ()
 	show_current_track ();
 	show_transport_time ();
 	show_track_gain ();
-	show_wheel_mode ();
+	show_mini_meter ();
 }
 
 void
@@ -102,6 +102,7 @@ TranzportControlProtocol::enter_normal_display_mode ()
 {
 	lights_off ();
 	screen_clear ();
+	show_wheel_mode();
 	display_mode = DisplayNormal;
 }
 

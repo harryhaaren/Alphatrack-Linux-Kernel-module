@@ -42,4 +42,8 @@
 #include <ardour/dB.h>
 #include "../../../gtk2_ardour/editing.h"
 
+static inline double ZEROIFNEG(double arg) {
+	return arg >= 0.0 ? arg : 0.0;
+}
+
 #endif /* ardour_tranzport_common */

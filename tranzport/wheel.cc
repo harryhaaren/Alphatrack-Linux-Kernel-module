@@ -18,20 +18,7 @@
  *  
  *   */
 
-#include <iostream>
-#include <algorithm>
-#include <cmath>
-
-#define __STDC_FORMAT_MACROS
-#include <inttypes.h>
-#include <float.h>
-#include <sys/time.h>
-#include <errno.h>
-#include <ardour/route.h>
-#include <ardour/audio_track.h>
-#include <ardour/session.h>
-#include <ardour/location.h>
-#include <ardour/dB.h>
+#include <tranzport_common.h>
 
 using namespace ARDOUR;
 using namespace std;
@@ -45,7 +32,6 @@ using namespace PBD;
 BaseUI::RequestType LEDChange = BaseUI::new_request_type ();
 BaseUI::RequestType Print = BaseUI::new_request_type ();
 BaseUI::RequestType SetCurrentTrack = BaseUI::new_request_type ();
-
 
 #include <tranzport_control_protocol.h>
 
@@ -75,13 +61,14 @@ TranzportControlProtocol::datawheel ()
     }
   } else {
     nframes64_t start = session->transport_frame();
-    
+/* FIXME: hack to determine if our new start location is negative 
+    if start >  */
     switch (wheel_mode) {
     case WheelTimelineSlave:
     case WheelTimeline:
-      get_snapto(); // strikes me as latency intensive - maybe only do after .1 seconds has elapsed
+      get_snapto(); // strikes me as latency intensive - maybe only do after 1 seconds has elapsed
       snap_to_internal(start,_datawheel,0); // start is a ref here
-      session->request_locate (start, session->transport_rolling());    
+      session->request_locate (ZEROIFNEG(start), session->transport_rolling());    
       
       break;
       

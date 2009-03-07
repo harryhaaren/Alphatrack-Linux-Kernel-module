@@ -41,11 +41,19 @@ void
 TranzportControlProtocol::button_event_battery_release (bool shifted)
 {
 #if DEBUG_TRANZPORT
-	printf("battery released, redrawing (and possibly crashing) display\n");
+	printf("battery released\n");
 #endif
+// The tranzport refuses to respond to events
+// for about 5 seconds after the battery button is released.
+// It does work in the case of a rebind (shifted).
+// So, doing a notify here forces a delayed screen redraw
+// which is hopefully long enough.
+
 	screen_invalidate();
 	last_where += 1; /* force time redisplay */
 	last_track_gain = FLT_MAX;
+	if(shifted) notify("Ardour Reconnected");
+	else notify("Battery Pressed     ");
 }
 
 void
@@ -179,7 +187,7 @@ void
 TranzportControlProtocol::button_event_in_press (bool shifted)
 {
 	if (shifted) {
-		toggle_punch_in ();
+	//
 	} else {
 		ControlProtocol::ZoomIn (); /* EMIT SIGNAL */
 	}
@@ -194,7 +202,7 @@ void
 TranzportControlProtocol::button_event_out_press (bool shifted)
 {
 	if (shifted) {
-		toggle_punch_out ();
+		// do something interesting
 	} else {
 		ControlProtocol::ZoomOut (); /* EMIT SIGNAL */
 	}
@@ -208,6 +216,11 @@ TranzportControlProtocol::button_event_out_release (bool shifted)
 void
 TranzportControlProtocol::button_event_punch_press (bool shifted)
 {
+	if (shifted) {
+		toggle_punch_out ();
+	} else {
+		toggle_punch_in ();
+	}
 }
 
 void
