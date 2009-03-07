@@ -47,7 +47,8 @@ TranzportControlProtocol::button_event_battery_release (bool shifted)
 // for about 5 seconds after the battery button is released.
 // It does work in the case of a rebind (shifted).
 // So, doing a notify here forces a delayed screen redraw
-// which is hopefully long enough.
+// which is not long enough, still
+// FIXME: notify should use a fixed timeout rather than loopcount
 
 	screen_invalidate();
 	last_where += 1; /* force time redisplay */
@@ -125,7 +126,9 @@ void
 TranzportControlProtocol::button_event_trackmute_press (bool shifted)
 {
 	if (shifted) {
-		// Mute ALL? Something useful when a phone call comes in. Mute master?
+	// Mute ALL? Do something useful when a phone call comes in. 
+	// Mute master? Mute Master and Busses? I think mute master
+	// would be best
 	} else {
 		route_set_muted (0, !route_get_muted (0));
 	}
@@ -170,10 +173,10 @@ TranzportControlProtocol::button_event_undo_press (bool shifted)
 //UndoHistory::get_state (uint32_t depth)
 
 	if (shifted) {
-		redo (); // someday flash the screen with what was redone
+		redo (); // FIXME: flash the screen with what was redone
 		notify("Redone!!");
 	} else {
-		undo (); // someday flash the screen with what was undone
+		undo (); // FIXME: flash the screen with what was undone
 		notify("Undone!!");
 	}
 }
@@ -216,6 +219,12 @@ TranzportControlProtocol::button_event_out_release (bool shifted)
 void
 TranzportControlProtocol::button_event_punch_press (bool shifted)
 {
+	printf("PUNCH: Can we have punch and add? %d\n", shifted);
+}
+
+void
+TranzportControlProtocol::button_event_punch_release (bool shifted)
+{
 	if (shifted) {
 		toggle_punch_out ();
 	} else {
@@ -224,13 +233,9 @@ TranzportControlProtocol::button_event_punch_press (bool shifted)
 }
 
 void
-TranzportControlProtocol::button_event_punch_release (bool shifted)
-{
-}
-
-void
 TranzportControlProtocol::button_event_loop_press (bool shifted)
 {
+	printf("LOOP: Can we have loop and add? %d\n",shifted);
 	if (shifted) {
 		next_wheel_shift_mode ();
 	} else {
@@ -258,18 +263,19 @@ TranzportControlProtocol::button_event_prev_release (bool shifted)
 {
 }
 
-// Note - add_marker should adhere to the snap to setting
-// maybe session->audible_frame does that
+// FIXME - add_marker should adhere to the snap to setting
+// maybe session->audible_frame does that?
 
 void
 TranzportControlProtocol::button_event_add_press (bool shifted)
 {
-	add_marker ();
+	printf("ADD: Can we have punch and add? %d\n", shifted);
 }
 
 void
 TranzportControlProtocol::button_event_add_release (bool shifted)
 {
+	add_marker();
 }
 
 void

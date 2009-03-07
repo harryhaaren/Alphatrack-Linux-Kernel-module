@@ -90,7 +90,7 @@ int TranzportControlProtocol::read(uint8_t *buf, uint32_t timeout_override)
 		break;
 	default: 
 #if DEBUG_TRANZPORT
-		cerr << "Got an unknown error on read:" << last_read_error "\n";
+		cerr << "Got an unknown error on read:" << last_read_error << "\n";
 #endif
 		break;
 	}
@@ -123,7 +123,7 @@ TranzportControlProtocol::write_noretry (uint8_t* cmd, uint32_t timeout_override
 			break;
 		default: 
 #if DEBUG_TRANZPORT
-			cerr << "Got an unknown error on write:" << last_write_error "\n";
+			cerr << "Got an unknown error on write:" << last_write_error << "\n";
 #endif
 			break;
 		}
