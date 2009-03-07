@@ -1,0 +1,82 @@
+Read thread is easy - get input, do something
+
+write thread is not. Unless there is stuff happening, it needs to sleep
+otherwise it eats up 100% of cpu. 
+
+if device is offline, wait for someone to poke it to do anything
+
+calculate read timeout offset 
+
+timer thread is useful for things like tempo checking...
+
+So, investigate tempo
+
+We need a tempo mode
+
+We need to quiecently do stuff when the 
+
+wiimote driver
+
+        transport_state_conn = session->TransportStateChange.connect(sigc::mem_fun(*this, &WiimoteControlProtocol::update_led_state));
+        record_state_conn = session->RecordStateChanged.connect(sigc::mem_fun(*this, &WiimoteControlProtocol::update_led_state));
+
+                std::list< sigc::slot<void> > slot_list;
+
+                sigc::connection transport_state_conn;
+                sigc::connection record_state_conn;
+
+
+void
+WiimoteControlProtocol::update_led_state()
+{
+        ENSURE_WIIMOTE_THREAD(sigc::mem_fun(*this, &WiimoteControlProtocol::update_led_state));
+
+        uint8_t state = 0;
+
+        if (session->transport_rolling()) {
+                state |= CWIID_LED1_ON;
+        }
+
+        if (session->actively_recording()) {
+                state |= CWIID_LED4_ON;
+        }
+
+        cwiid_set_led(wiimote_handle, state);
+}
+
+
+Over in session we have
+
+	sigc::signal<void,boost::shared_ptr<Region> > RegionHiddenChange;
+
+	/* Emitted when all i/o connections are complete */
+	
+	sigc::signal<void> IOConnectionsComplete;
+	
+	/* Record status signals */
+
+	sigc::signal<void> RecordStateChanged;
+
+	/* Transport mechanism signals */
+
+	sigc::signal<void> TransportStateChange; /* generic */
+	sigc::signal<void,nframes_t> PositionChanged; /* sent after any non-sequential motion */
+	sigc::signal<void> DurationChanged;
+	sigc::signal<void,nframes_t> Xrun;
+	sigc::signal<void> TransportLooped;
+
+	sigc::signal<void,RouteList&> RouteAdded;
+
+	sigc::signal<void,Location*>    auto_loop_location_changed;
+	sigc::signal<void,Location*>    auto_punch_location_changed;
+	sigc::signal<void>              locations_modified;
+
+	static sigc::signal<void> StartTimeChanged;
+	static sigc::signal<void> EndTimeChanged;
+	static sigc::signal<void> SMPTEOffsetChanged;
+
+
+	sigc::signal<void,bool> SoloActive;
+	sigc::signal<void> SoloChanged;
+
+	static sigc::signal<void> SendFeedback;

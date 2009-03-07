@@ -1,22 +1,48 @@
+/*
+  Copyright (C) 2006 Paul Davis 
+  Copyright (C) 2007 Mike Taht
+
+  This program is free software; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation; either version 2 of the License, or
+  (at your option) any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program; if not, write to the Free Software
+  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+
+*/
+
 
 #ifndef ardour_tranzport_control_protocol_h
 #define ardour_tranzport_control_protocol_h
 
-#include <vector>
+#include "tranzport_base.h"
 
+#include <vector>
+#include <bitset>
 #include <sys/time.h>
 #include <pthread.h>
+
+#if !HAVE_TRANZPORT_KERNEL_DRIVER
 #include <usb.h>
+#endif
 
 #include <glibmm/thread.h>
-
 #include <ardour/types.h>
 
 #include <control_protocol/control_protocol.h>
 
+#include "../../../gtk2_ardour/editing.h"
+
 class TranzportControlProtocol : public ARDOUR::ControlProtocol
 {
-  public:
+public:
 	TranzportControlProtocol (ARDOUR::Session&);
 	virtual ~TranzportControlProtocol();
 
@@ -27,14 +53,25 @@ class TranzportControlProtocol : public ARDOUR::ControlProtocol
 	XMLNode& get_state ();
 	int set_state (const XMLNode&);
 
-  private:
+private:
+#if !HAVE_TRANZPORT_KERNEL_DRIVER
 	static const int VENDORID = 0x165b;
 	static const int PRODUCTID = 0x8101;
 	static const int READ_ENDPOINT  = 0x81;
 	static const int WRITE_ENDPOINT = 0x02;
+#endif
 	const static int STATUS_OFFLINE  = 0xff;
 	const static int STATUS_ONLINE = 0x01;
-	const static uint8_t WheelDirectionThreshold = 0x3f;
+	const static int STATUS_OK = 0x00;
+  
+        const static int LIGHTS = 7;
+        const static int ROWS = 2;
+        const static int COLUMNS = 20;
+#if HAVE_TRANZPORT_KERNEL_DRIVER
+	const static int8_t WheelDirectionThreshold = 0;
+#else
+	const static uint8_t WheelDirectionThreshold = 0x7f;
+#endif
 
 	enum LightID {
 		LightRecord = 0,
@@ -67,7 +104,8 @@ class TranzportControlProtocol : public ARDOUR::ControlProtocol
 		ButtonStop = 0x00010000,
 		ButtonPlay = 0x00100000,
 		ButtonRecord = 0x00000100,
-		ButtonShift = 0x08000000
+		ButtonShift = 0x08000000,
+		ButtonFootswitch = 0x00001000 
 	};
 
 	enum WheelShiftMode {
@@ -78,23 +116,16 @@ class TranzportControlProtocol : public ARDOUR::ControlProtocol
 	};
 		
 	enum WheelMode {
+		WheelTimelineSlave,
 		WheelTimeline,
 		WheelScrub,
 		WheelShuttle
 	};
 
-	// FIXME - look at gtk2_ardour for snap settings
+	Editing::SnapType snap_to;
+	Editing::SnapMode snap_mode;
+	double snap_threshold;
 
-	enum WheelIncrement {
-	       WheelIncrSlave,
-	       WheelIncrScreen,
-	       WheelIncrSample,
-	       WheelIncrBeat,
-	       WheelIncrBar,
-	       WheelIncrSecond,
-	       WheelIncrMinute
-	};
-	  
 	enum DisplayMode {
 		DisplayNormal,
 		DisplayRecording,
@@ -111,37 +142,54 @@ class TranzportControlProtocol : public ARDOUR::ControlProtocol
 	        BlingRotating,
 	        BlingPairs,
 	        BlingRows,
-	        BlingFlashAll
+	        BlingFlashAll,
+		BlingEnter,
+		BlingExit
 	};
 	
 	pthread_t       thread;
+#if HAVE_TRANZPORT_KERNEL_DRIVER
+	int udev;
+#else
+	usb_dev_handle* udev;
+#endif
+
+#if TRANZPORT_THREADS
+	pthread_t       thread_read;
+#endif
+	int             last_read_error;
+
 	uint32_t        buttonmask;
 	uint32_t        timeout;
 	uint32_t        inflight;
-	uint8_t        _datawheel;
-	uint8_t        _device_status;
 	uint32_t        current_track_id;
+#if TRANZPORT_THREADS
+	pthread_t       thread_write;
+#endif
+	int             last_write_error;
+	int8_t        _datawheel;
+	uint8_t        _device_status;
 	WheelMode       wheel_mode;
 	WheelShiftMode  wheel_shift_mode;
 	DisplayMode     display_mode;
 	BlingMode       bling_mode;
-	WheelIncrement  wheel_increment;
-	usb_dev_handle* udev;
 
 	ARDOUR::gain_t  gain_fraction;
 
 	Glib::Mutex update_lock;
 
-	bool screen_invalid[2][20];
-	char screen_current[2][20];
-	char screen_pending[2][20];
-	char screen_flash[2][20];
+        std::bitset<ROWS*COLUMNS> screen_invalid;
+	char screen_current[ROWS][COLUMNS];
+	char screen_pending[ROWS][COLUMNS];
+	char screen_flash[ROWS][COLUMNS];
 
-	bool lights_invalid[7];
-	bool lights_current[7];
-	bool lights_pending[7];
-	bool lights_flash[7];
+        std::bitset<LIGHTS> lights_invalid;
+        std::bitset<LIGHTS> lights_current;
+        std::bitset<LIGHTS> lights_pending;
+        std::bitset<LIGHTS> lights_flash;
 
+	int32_t       last_notify;
+	char           last_notify_msg[COLUMNS+1]; 
 	uint32_t       last_bars;
 	uint32_t       last_beats;
 	uint32_t       last_ticks;
@@ -151,10 +199,9 @@ class TranzportControlProtocol : public ARDOUR::ControlProtocol
 	uint32_t       last_mins;
 	uint32_t       last_secs;
 	uint32_t       last_frames;
-	nframes_t last_where;
+	nframes_t      last_where;
 	ARDOUR::gain_t last_track_gain;
 	uint32_t       last_meter_fill;
-	struct timeval last_wheel_motion;
 	int            last_wheel_dir;
 
 	Glib::Mutex io_lock;
@@ -164,16 +211,25 @@ class TranzportControlProtocol : public ARDOUR::ControlProtocol
 	int write (uint8_t* cmd, uint32_t timeout_override = 0);
 	int write_noretry (uint8_t* cmd, uint32_t timeout_override = 0);
 	int close ();
-	int save(char *name = "default");
-	int load(char *name = "default");
-	void print (int row, int col, const char* text);
+	int save_config(char *name = "default");
+	int load_config(char *name = "default");
+	int save(char *name);
+	int load(char *name);
+        void print (int row, int col, const char* text);
 	void print_noretry (int row, int col, const char* text);
+	void notify(const char *msg);
 
+#if HAVE_TRANZPORT_KERNEL_DRIVER
+	int rtpriority_set(int priority = 0); // we don't need rt privs anymore
+#else
 	int rtpriority_set(int priority = 52);
+#endif
 	int rtpriority_unset(int priority = 0);
 
+	// I hate changing the api to do either but until I have clean io class what can you do?
+#if !HAVE_TRANZPORT_KERNEL_DRIVER
 	int open_core (struct usb_device*);
-
+#endif
 	static void* _monitor_work (void* arg);
 	void* monitor_work ();
 
@@ -191,6 +247,7 @@ class TranzportControlProtocol : public ARDOUR::ControlProtocol
 	int  screen_flush();
 	void screen_clear();
 	// bool screen_isuptodate(); // think on this - 
+	int  screen_show_bling();
 
 	// Commands to write to the lcd 
 
@@ -198,8 +255,8 @@ class TranzportControlProtocol : public ARDOUR::ControlProtocol
         bool lcd_damage();
 	bool lcd_isdamaged();
 
-        bool lcd_damage(int row, int col = 0, int length = 20);
-	bool lcd_isdamaged(int row, int col = 0, int length = 20);
+        bool lcd_damage(int row, int col = 0, int length = COLUMNS);
+	bool lcd_isdamaged(int row, int col = 0, int length = COLUMNS);
 
 	int  lcd_flush();
 	int  lcd_write(uint8_t* cmd, uint32_t timeout_override = 0); // pedantic alias for write
@@ -240,6 +297,10 @@ class TranzportControlProtocol : public ARDOUR::ControlProtocol
 	void enter_recording_mode();
 	void enter_bling_mode();
 
+	void change_marker(int steps);
+	void next_marker (); // basicui doesn't give me enough info
+	void prev_marker (); 
+
 	void next_display_mode ();
 	void normal_update ();
 
@@ -252,6 +313,9 @@ class TranzportControlProtocol : public ARDOUR::ControlProtocol
 	void show_gain ();
 	void show_pan ();
 	void show_meter ();
+	void show_mini_meter ();
+	void show_bling();
+	void show_notify();
 
 	void datawheel ();
 	void scrub ();
@@ -263,14 +327,15 @@ class TranzportControlProtocol : public ARDOUR::ControlProtocol
 	void next_wheel_shift_mode ();
 
 	void set_current_track (ARDOUR::Route*);
-	void next_track ();
-	void prev_track ();
-	void step_gain_up ();
-	void step_gain_down ();
-	void step_pan_right ();
-	void step_pan_left ();
+	void change_track (int steps);
+	void step_gain (int steps);
+	void step_pan(int steps);
 
-
+	XMLNode *editor_settings ();
+	Editing::SnapType get_snapto ();
+	void go_snap_to (nframes64_t& start, int32_t direction, bool for_mark);
+	void snap_to_internal (nframes64_t& start, int32_t direction, bool for_mark);
+	
 	void button_event_battery_press (bool shifted);
 	void button_event_battery_release (bool shifted);
 	void button_event_backlight_press (bool shifted);
@@ -311,8 +376,10 @@ class TranzportControlProtocol : public ARDOUR::ControlProtocol
 	void button_event_play_release (bool shifted);
 	void button_event_record_press (bool shifted);
 	void button_event_record_release (bool shifted);
+	void button_event_footswitch_press(bool shifted);
+	void button_event_footswitch_release (bool shifted);
 
-	// new api
+	// new api - still thinking about it
 	void button_event_mute (bool pressed, bool shifted);
 };
 

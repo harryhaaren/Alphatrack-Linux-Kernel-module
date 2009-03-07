@@ -1,0 +1,35 @@
+Fix udev permissions to tranzport driver
+Fix patches for kernel driver
+* eliminate sysfs stuff DONE
+* Submit signed-off-by DONE
+* clean up driver
+* implement multibyte reads/writes
+* Write throttling
+
+Fix Ardour driver
+Linux only (requires hardware driver)
+Extremely low cpu usage
+Reliable keystrokes and many shuttle movements
+Slave to screen settings
+Realtime no longer required
+display made reliable through offline & battery events
+ 
+* scrub no longer increments past .1
+* Shuttle is precisely backwards (but increments) * FIXED
+* Direction doesn't work right - only takes positive/negative/0 - would prefer to take an offset - fixed by recursive call to set_snap_to 
+* estimator for going backwards while tranzport is running
+* Undo issue - can crash ardour with marker create/undo. More obvious in 3.0
+* Marker moves of cd markers is broken in gui
+* Movement by region starts/ends does not work
+* display should be slaved to second clock
+* Movement with grid on is busted - fixed
+* Display still has minor glitches - doesn't display current position until move
+* epoll switch w/callbacks
+* config screen
+* implement alphatrack
+* realtime scheduling is no longer required (I think) R/T disabled for now.
+* Most Movement works but can underflow. Movement by beats can fail, less always fails.
+* No grid + CD frames - moves by samples works
+* switch to git
+* backlight redraws screen, battery does not
+
