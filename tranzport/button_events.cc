@@ -293,7 +293,15 @@ TranzportControlProtocol::button_event_rewind_press (bool shifted)
 	if (shifted) {
 		goto_start ();
 	} else {
-		rewind ();
+		float speed = transport_speed();
+		if(speed > -2.0) {
+			rewind ();
+		} else {
+		if(speed <= -2.0) {
+			speed += -1.0;
+			set_transport_speed(speed);
+			}
+		}	
 	}
 }
 
@@ -308,7 +316,15 @@ TranzportControlProtocol::button_event_fastforward_press (bool shifted)
 	if (shifted) {
 		goto_end ();
 	} else {
-		ffwd ();
+		float speed = transport_speed();
+		if(speed < 2.0) {
+			ffwd ();
+		} else {
+		if(speed >= 2.0) {
+			speed += 1.0;
+			set_transport_speed(speed);
+			}
+		}	
 	}
 }
 
