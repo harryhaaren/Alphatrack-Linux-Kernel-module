@@ -328,13 +328,23 @@ TranzportControlProtocol::button_event_add_release (bool shifted)
       complex_mode_change = 1;
     if (loop_held) {
       Location *l = session->locations()->auto_loop_location();
+      session->begin_reversible_command (_("change loop range"));
+      XMLNode &before = session->locations()->get_state();
+      session->locations()->remove(l);
+      
       if(shifted) {
 	l->set_end(session->locations()->current()->end());
+	session->locations()->add (l, true);
 	notify("LOOP END ADDED ");
       } else {
-	l->set_end(session->locations()->current()->start());
+	l->set_start(session->locations()->current()->start());
+	session->locations()->add (l, true);
 	notify("LOOP START ADD ");
       }
+      XMLNode &after = session->locations()->get_state();
+      session->add_command(new MementoCommand<Locations>(*(session->locations()), &before, &after));
+      session->commit_reversible_command ();
+
     } else {
       if (punch_held) {
       Location *l = session->locations()->auto_loop_location();
