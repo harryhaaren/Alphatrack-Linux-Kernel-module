@@ -96,7 +96,7 @@ TranzportControlProtocol::scroll ()
 }
 
 /* Better scrub mode that bounces between .5 and 0.0 as per discussion on the list */
-
+/* I still kind of think that .5 - 1 to 1.5 might be more useful */
 void
 TranzportControlProtocol::scrub ()
 {
@@ -114,8 +114,7 @@ TranzportControlProtocol::scrub ()
 	  last_wheel_dir = dir;
 	}
 
-	if (dir != last_wheel_dir && speed == 0.0) {
-		/* changed direction, start over */
+	if (fabs(speed) == 0.0f) {
 		speed = 0.5f;
       		session->request_transport_speed(speed*dir);
 	} else {

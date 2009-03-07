@@ -144,7 +144,6 @@ void TranzportControlProtocol::show_mini_meter()
 		meter_size = 20; 
 	} 
 
-
 	// you only seem to get a route_table[0] == 0 on moving forward - bug in next_track?
 
 	if (route_table[0] == 0) {
@@ -252,7 +251,7 @@ TranzportControlProtocol::show_meter ()
 	}
 
 
-	if (fraction == 0.98 ) {
+	if (fraction > 0.98 ) {
 		light_on (LightTrackrec);
 	}
 
