@@ -332,44 +332,82 @@ void
 TranzportControlProtocol::button_event_add_release (bool shifted)
 {
   // FIXME nframes64_t for ardour3?
-  nframes_t start, end;
   string loop;
+  Location *loc;
+  Location *newloc;
+  bool wasnull = 0;
   // The usual sequence is [ shift ] - [ loop or punch ] - add 
   if(loop_held | punch_held) {
       complex_mode_change = 1;
     if (loop_held) {
-      Location *l = session->locations()->auto_loop_location();
-      if(l) {
-      start = l->start();
-      end = l->end();
-      loop = l->name(); // clever way to avoid one intl issue
+      loc = session->locations()->auto_loop_location();
+      if(loc==0) {
+	newloc = new Location(0.0,session->current_end_frame(),_("Loop"), Location::Flags(Location::IsAutoLoop));
+	wasnull = 1;
       } else {
-	start = end = ;
-	loop = _("Loop"); // not clever enough for intl issue
+	newloc = new Location(*loc);
       }
+      
       session->begin_reversible_command (_("change loop range")); // not so clever
       XMLNode &before = session->locations()->get_state();
-      if(l) session->locations()->remove(l);
+
+      if(wasnull == 0) session->locations()->remove(loc);
+
       if(shifted) {
-	end = 800.0;
-	notify("LOOP END ADDED ");
+	newloc->set_end(session->transport_frame());
       } else {
-	start = 60000.0;
-	notify("LOOP START ADD ");
+	newloc->set_start(session->transport_frame());
       }
-      session->locations()->add (new Location (start, end, loop, Location::Flags (Location::IsAutoLoop)),true);
+
+      if (newloc->start() >= newloc->end()) {
+	newloc->set_end (newloc->start() + 1);
+      }
+      session->locations()->add (newloc,true);
+      session->set_auto_loop_location (newloc);
       XMLNode &after = session->locations()->get_state();
       session->add_command(new MementoCommand<Locations>(*(session->locations()), &before, &after));
       session->commit_reversible_command ();
 
+      if(shifted) {
+	notify("LOOP END ADDED ");
+      } else {
+	notify("LOOP START ADD ");
+      }
+
+
     } else {
       if (punch_held) {
-      Location *l = session->locations()->auto_loop_location();
+      loc = session->locations()->auto_punch_location();
+      if(loc==0) {
+	newloc = new Location(0.0,session->current_end_frame(),_("Loop"), Location::Flags(Location::IsAutoPunch));
+	wasnull = 1;
+      } else {
+	newloc = new Location(*loc);
+      }
+      
+      session->begin_reversible_command (_("change loop range")); // not so clever
+      XMLNode &before = session->locations()->get_state();
+
+      if(wasnull == 0) session->locations()->remove(loc);
+
       if(shifted) {
-	l->set_end(session->locations()->current()->end());
+	newloc->set_end(session->transport_frame());
+      } else {
+	newloc->set_start(session->transport_frame());
+      }
+
+      if (newloc->start() >= newloc->end()) {
+	newloc->set_end (newloc->start() + 1);
+      }
+      session->locations()->add (newloc,true);
+      session->set_auto_punch_location (newloc);
+      XMLNode &after = session->locations()->get_state();
+      session->add_command(new MementoCommand<Locations>(*(session->locations()), &before, &after));
+      session->commit_reversible_command ();
+
+      if(shifted) {
 	notify("PNCH END ADDED ");
       } else {
-	l->set_start(session->locations()->current()->start());
 	notify("PNCH START ADD ");
       }
       }
@@ -379,6 +417,7 @@ TranzportControlProtocol::button_event_add_release (bool shifted)
   }
   add_held = 0;
 }
+
 
 void
 TranzportControlProtocol::button_event_next_press (bool shifted)

@@ -131,6 +131,8 @@ TranzportControlProtocol::snap_to_internal (nframes64_t& start, int32_t directio
     case Editing::SnapToSeconds: break;
     case Editing::SnapToMinutes: break;
     case Editing::SnapToMark: break;
+    case Editing::SnapToBar: break;
+
     case Editing::SnapToRegionStart: 
     case Editing::SnapToRegionEnd: 
     case Editing::SnapToRegionSync: 
