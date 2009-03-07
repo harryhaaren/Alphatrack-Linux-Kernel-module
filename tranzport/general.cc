@@ -48,15 +48,15 @@ void TranzportControlProtocol::notify(const char *msg) {
 	if(strlen(msg) < 21) {
 		strcpy(last_notify_msg,msg);
 	} else {
-		strncpy(last_notify_msg,msg,16);
-		last_notify_msg[16] = '\000';
+		strncpy(last_notify_msg,msg,20);
+		last_notify_msg[20] = '\000';
 	}
 }
 
 void TranzportControlProtocol::show_notify() {
 // FIXME: Get width of the notify area somehow
 	if(last_notify==0) {
-		print(1,0,"                ");
+		print(1,0,"                    ");
 		last_notify=-1;
 	}
 	if(last_notify > 0) {
