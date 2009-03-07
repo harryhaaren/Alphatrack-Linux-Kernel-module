@@ -249,12 +249,12 @@ void
 TranzportControlProtocol::add_marker_snapped ()
 {
   static int counter = 0;
+  string note = string_compose("Tranz%1",counter); 
   ++counter;
-  std:string note = "Tranz"; // << counter;
   nframes64_t when = session->audible_frame();
   session->begin_reversible_command (_("add marker"));
-  session->locations()->add (new Location (when, when, note, Location::IsMark), true);
   XMLNode &before = session->locations()->get_state();
+  session->locations()->add (new Location (when, when, note, Location::IsMark), true);
   XMLNode &after = session->locations()->get_state();
   session->add_command(new MementoCommand<Locations>(*(session->locations()), &before, &after));
   session->commit_reversible_command ();
