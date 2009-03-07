@@ -190,9 +190,12 @@ void
 TranzportControlProtocol::button_event_in_press (bool shifted)
 {
 	if (shifted) {
-	// FIXME: Having ControlProtocol:ZoomToRegion makes the most sense to me
+	  // FIXME: Having ControlProtocol:ZoomToRegion makes the most sense to me
+	  // Select the region under the playhead on the track and zoom.
+		notify("Zoomed To Region");
 	} else {
 		ControlProtocol::ZoomIn (); /* EMIT SIGNAL */
+		notify("Zoomed IN");
 	}
 }
 
@@ -206,8 +209,10 @@ TranzportControlProtocol::button_event_out_press (bool shifted)
 {
 	if (shifted) {
 	  ControlProtocol::ZoomToSession (); /* EMIT SIGNAL */
+	  notify("Zoomed To Session");
 	} else {
 	  ControlProtocol::ZoomOut (); /* EMIT SIGNAL */
+	  notify("Zooming Out");
 	}
 }
 
@@ -320,9 +325,19 @@ TranzportControlProtocol::button_event_add_release (bool shifted)
   if(loop_held | punch_held) {
       complex_mode_change = 1;
     if (loop_held) {
-      
+      // FIXME: create the darn markers here via locations-> magic
+      if(shifted) {
+	notify("LOOP END ADDED FIXME");
+      } else {
+	notify("LOOP START ADDED FIXME");
+      }
     } else {
       if (punch_held) {
+      if(shifted) {
+	notify("PNCH END ADDED FIXME");
+      } else {
+	notify("PNCH ST  ADDED FIXME");
+      }
       }
     }
   } else {
