@@ -130,7 +130,7 @@ int TranzportControlProtocol::lights_show_normal()
 
 int TranzportControlProtocol::lights_show_tempo() 
 {
-	// someday soon fiddle with the lights more sanely based on the tempo 
+	// FIXME: fiddle with the lights based on the tempo 
 	return     lights_show_normal();
 }
 
@@ -206,7 +206,7 @@ TranzportControlProtocol::change_marker (int steps)
 	} else {
 	if(steps > 0) {
 		session->goto_end ();
-		notify("END");
+		notify("END  ");
 	} else {
 		session->goto_start ();
 		notify("START");
@@ -243,16 +243,22 @@ TranzportControlProtocol::next_marker ()
 }
 
 
-// FIXME: This should be reversable
-// And pay attention to the snap-to settings
-
+// FIXME: pay attention to the snap-to settings
+// FIXME: Make reversible
 void       
 TranzportControlProtocol::add_marker_snapped ()
 {
   static int counter = 0;
   ++counter;
+  std:string note = "Tranz"; // << counter;
   nframes64_t when = session->audible_frame();
-  session->locations()->add (new Location (when, when, "Tranz", Location::IsMark));
+  session->begin_reversible_command (_("add marker"));
+  session->locations()->add (new Location (when, when, note, Location::IsMark), true);
+  XMLNode &before = session->locations()->get_state();
+  XMLNode &after = session->locations()->get_state();
+  session->add_command(new MementoCommand<Locations>(*(session->locations()), &before, &after));
+  session->commit_reversible_command ();
+
 }
 
 // We want to go to all marker types - loop, punch, cd, regular markers
@@ -262,7 +268,6 @@ TranzportControlProtocol::prev_marker_any ()
 {
   nframes64_t current = session->transport_frame();
   Location *location = session->locations()->first_location_before (current,1);
-	
   if (location) {
     session->request_locate (location->start(), session->transport_rolling());
     notify(location->name().c_str());
@@ -361,10 +366,9 @@ TranzportControlProtocol::change_track (int steps)
 	}
 	}
 	gain_fraction = gain_to_slider_position (route_get_effective_gain (0));
-//	notify("NextTrak"); // not needed til we have more modes
 }
 
-// This should kind of switch to using notify
+// This should kind of switch to using a more general notify
 
 // Was going to keep state around saying to retry or not
 // haven't got to it yet, still not sure it's a good idea

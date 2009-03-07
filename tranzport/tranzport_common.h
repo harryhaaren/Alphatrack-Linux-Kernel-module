@@ -40,6 +40,8 @@
 #include <ardour/tempo.h>
 #include <ardour/location.h>
 #include <ardour/dB.h>
+#include <pbd/memento_command.h>
+
 #include "../../../gtk2_ardour/editing.h"
 
 static inline double ZEROIFNEG(double arg) {
