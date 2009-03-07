@@ -122,15 +122,29 @@ TranzportControlProtocol::snap_to_internal (nframes64_t& start, int32_t directio
   nframes64_t presnap = start;
   float speed = session->transport_speed();
 
-  // FIXME: When the transport is moving it does you no good
-  // to try to move by CD frames or SMPTE Frames, or anything less than a beat.
+  // FIXME: When the transport is moving it does you very little good
+  // to try to move by CD frames or SMPTE Frames, or anything less than a bar.
+  if(speed != 0.0) {
+    switch(snap_to) {
+    case Editing::SnapToSMPTESeconds: break;
+    case Editing::SnapToSMPTEMinutes: break;
+    case Editing::SnapToSeconds: break;
+    case Editing::SnapToMinutes: break;
+    case Editing::SnapToMark: break;
+    case Editing::SnapToRegionStart: 
+    case Editing::SnapToRegionEnd: 
+    case Editing::SnapToRegionSync: 
+    case Editing::SnapToRegionBoundary: notify("No snap to regions"); break;
+    default: break;
+    }
+  } else {
 
   switch (snap_to) {
   case Editing::SnapToCDFrame:
     if(snap_mode == Editing::SnapOff) {
       FUDGE_64BIT_INC(start,dir); // move by samples instead
     } else {
-      FUDGE_64BIT_INC(start,dir); // move by samples instead
+      FUDGE_64BIT_INC(start,dir); // move by CD frames instead
 
       if (((dir == 0) && 
 	   (start % (one_second/75) > (one_second/75) / 2)) || 
@@ -345,7 +359,13 @@ if (((dir == 0) && (start % one_minute > one_minute / 2)) || (dir > 0)) {
 	}
 */
 
-/* Ahh, recursion */
+/* FIXME: Recursion, with a reference var, no less. No mi gusta. 
+   The right way to fix this would be to extend the various snapto
+   calls in libardour to treat the direction argument as a count.
+
+   This would also do nice things for the disk butler which otherwise
+   is going nuts trying to keep up with a very rapid string of requests.
+*/
 
 	if(dir > 0) { 
 	  --direction; // start++;  
@@ -356,5 +376,7 @@ if (((dir == 0) && (start % one_minute > one_minute / 2)) || (dir > 0)) {
 	  snap_to_internal(start, direction, for_mark); 
 	  }
 	}
-
+  }
 }
+
+

@@ -223,7 +223,7 @@ TranzportControlProtocol::prev_marker ()
 		notify(location->name().c_str());
 	} else {
 		session->goto_start ();
-		notify("START");
+		notify("STRT");
 	}
      
 }
@@ -242,6 +242,52 @@ TranzportControlProtocol::next_marker ()
 	}
 }
 
+
+// FIXME: This should be reversable
+// And pay attention to the snap-to settings
+
+void       
+TranzportControlProtocol::add_marker_snapped ()
+{
+  static int counter = 0;
+  ++counter;
+  nframes64_t when = session->audible_frame();
+  session->locations()->add (new Location (when, when, "Tranz", Location::IsMark));
+}
+
+// We want to go to all marker types - loop, punch, cd, regular markers
+
+void
+TranzportControlProtocol::prev_marker_any ()
+{
+  nframes64_t current = session->transport_frame();
+  Location *location = session->locations()->first_location_before (current,1);
+	
+  if (location) {
+    session->request_locate (location->start(), session->transport_rolling());
+    notify(location->name().c_str());
+  } else {
+    session->goto_start ();
+    notify("STRT");
+  }
+}
+
+// We want to go to all marker types - loop, punch, cd, regular markers
+
+void
+TranzportControlProtocol::next_marker_any ()
+{
+  nframes64_t current = session->transport_frame();
+  Location *location = session->locations()->first_location_after (current,1);
+  
+  if (location) {
+    session->request_locate (location->start(), session->transport_rolling());
+    notify(location->name().c_str());
+  } else {
+    session->request_locate (session->current_end_frame());
+    notify("END ");
+  }
+}
 
 void
 TranzportControlProtocol::show_current_track ()

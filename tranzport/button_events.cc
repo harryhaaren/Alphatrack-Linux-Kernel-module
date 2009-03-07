@@ -128,7 +128,7 @@ TranzportControlProtocol::button_event_trackmute_press (bool shifted)
 	if (shifted) {
 	// Mute ALL? Do something useful when a phone call comes in. 
 	// Mute master? Mute Master and Busses? I think mute master
-	// would be best
+	// would be best. FIXME
 	} else {
 		route_set_muted (0, !route_get_muted (0));
 	}
@@ -190,7 +190,7 @@ void
 TranzportControlProtocol::button_event_in_press (bool shifted)
 {
 	if (shifted) {
-	//
+	// FIXME: Having ControlProtocol:ZoomToRegion makes the most sense to me
 	} else {
 		ControlProtocol::ZoomIn (); /* EMIT SIGNAL */
 	}
@@ -205,9 +205,9 @@ void
 TranzportControlProtocol::button_event_out_press (bool shifted)
 {
 	if (shifted) {
-		// do something interesting
+	  ControlProtocol::ZoomToSession (); /* EMIT SIGNAL */
 	} else {
-		ControlProtocol::ZoomOut (); /* EMIT SIGNAL */
+	  ControlProtocol::ZoomOut (); /* EMIT SIGNAL */
 	}
 }
 
@@ -219,42 +219,56 @@ TranzportControlProtocol::button_event_out_release (bool shifted)
 void
 TranzportControlProtocol::button_event_punch_press (bool shifted)
 {
-	printf("PUNCH: Can we have punch and add? %d\n", shifted);
+  punch_held = 1;
 }
 
 void
 TranzportControlProtocol::button_event_punch_release (bool shifted)
 {
-	if (shifted) {
-		toggle_punch_out ();
-	} else {
-		toggle_punch_in ();
-	}
+  if(complex_mode_change) {
+    complex_mode_change = 0;
+  } else {
+    if (shifted) {
+      toggle_punch_out ();
+    } else {
+      toggle_punch_in ();
+    }
+  }
+    punch_held = 0;
 }
 
 void
 TranzportControlProtocol::button_event_loop_press (bool shifted)
 {
-	printf("LOOP: Can we have loop and add? %d\n",shifted);
-	if (shifted) {
-		next_wheel_shift_mode ();
-	} else {
-		loop_toggle ();
-	}
+    loop_held = 1;
 }
 
 void
 TranzportControlProtocol::button_event_loop_release (bool shifted)
 {
+  if(complex_mode_change) {
+    complex_mode_change = 0;
+  } else {
+    if (shifted) {
+      // FIXME: Do something more interesting than this?
+      loop_mode = !session->get_play_loop();
+      session->request_play_loop(loop_mode);
+    } else {
+      loop_mode = !session->get_play_loop();
+      session->request_play_loop(loop_mode);
+    }
+  }
+  loop_held = 0;
 }
+
 
 void
 TranzportControlProtocol::button_event_prev_press (bool shifted)
 {
 	if (shifted) {
-		ControlProtocol::ZoomToSession (); /* EMIT SIGNAL */
+	  next_wheel_shift_mode ();
 	} else {
-		prev_marker ();
+	  prev_marker_any ();
 	}
 }
 
@@ -269,13 +283,52 @@ TranzportControlProtocol::button_event_prev_release (bool shifted)
 void
 TranzportControlProtocol::button_event_add_press (bool shifted)
 {
-	printf("ADD: Can we have punch and add? %d\n", shifted);
+  add_held = 1;
 }
+
+/*
+        session->begin_reversible_command (_("clear locations"));
+
+                Location * looploc = session->locations()->auto_loop_location();
+                Location * punchloc = session->locations()->auto_punch_location();
+
+                session->locations()->clear_ranges ();
+                // re-add these
+                if (looploc) session->locations()->add (looploc);
+                if (punchloc) session->locations()->add (punchloc);
+
+       session->commit_reversible_command ();
+
+
+     if (session->transport_rolling()) {
+                session->request_stop (with_abort);
+                if (session->get_play_loop()) {
+                        session->request_play_loop (false);
+                }
+        } else {
+                session->request_transport_speed (1.0f);
+        }
+
+
+
+*/
 
 void
 TranzportControlProtocol::button_event_add_release (bool shifted)
 {
-	add_marker();
+  // The usual sequence is [ shift ] - [ loop or punch ] - add 
+  if(loop_held | punch_held) {
+      complex_mode_change = 1;
+    if (loop_held) {
+      
+    } else {
+      if (punch_held) {
+      }
+    }
+  } else {
+    add_marker_snapped();
+  }
+  add_held = 0;
 }
 
 void
@@ -284,7 +337,7 @@ TranzportControlProtocol::button_event_next_press (bool shifted)
 	if (shifted) {
 		next_wheel_mode ();
 	} else {
-		next_marker ();
+		next_marker_any ();
 	}
 }
 
@@ -297,7 +350,11 @@ void
 TranzportControlProtocol::button_event_rewind_press (bool shifted)
 {
 	if (shifted) {
+	  if(loop_mode) {
+	    // FIXME: go to beginning of loop
+	  } else {
 		goto_start ();
+	  }
 	} else {
 		float speed = session->transport_speed();
 		if(speed > -2.0) {
@@ -320,7 +377,11 @@ void
 TranzportControlProtocol::button_event_fastforward_press (bool shifted)
 {
 	if (shifted) {
+	  if(loop_mode) {
+	    // FIXME go to end of loop
+	  } else {
 		goto_end ();
+	  }
 	} else {
 		float speed = session->transport_speed();
 		if(speed < 2.0) {
@@ -354,14 +415,31 @@ TranzportControlProtocol::button_event_stop_release (bool shifted)
 {
 }
 
+/*
+                IsAutoPunch = 0x2,
+                IsAutoLoop = 0x4,
+                IsHidden = 0x8,
+                IsCDMarker = 0x10,
+*/
+
 void
 TranzportControlProtocol::button_event_play_press (bool shifted)
 {
-	if (shifted) {
-		set_transport_speed (1.0f);
-	} else {
-		transport_play ();
-	}
+  // FIXME: Does not always record, even when the record light is lit
+
+  if(loop_mode) {
+    session->request_play_loop (true);
+    if (!session->transport_rolling()) {
+      session->request_transport_speed (1.0);
+    }
+  } else {
+    session->request_play_loop (false);
+    if (shifted) {
+      set_transport_speed (1.0f);
+    } else {
+      transport_play ();
+    }
+  }
 }
 
 void
@@ -388,9 +466,9 @@ void
 TranzportControlProtocol::button_event_footswitch_press (bool shifted)
 {
 	if (shifted) {
-		next_marker (); // think this through, we could also do punch in
+		next_marker_any (); // think this through, we could also do punch
 	} else {
-		prev_marker (); // think this through, we could also do punch in
+		prev_marker_any (); // think this through, we could also do loop
 	}
 }
 
@@ -399,9 +477,21 @@ TranzportControlProtocol::button_event_footswitch_release (bool shifted)
 {
 	if(session->transport_speed() == 0.0)
 	{
-		transport_play ();
+	  if(loop_mode) {
+	    session->request_play_loop (true);
+	    if (!session->transport_rolling()) {
+	      session->request_transport_speed (1.0);
+	    } 
+	  } else {
+	  session->request_play_loop (false);
+	  transport_play ();
+	  }
+	} else {
+	  session->request_play_loop (false);
+	  transport_play ();
 	}
 }
+
 
 // Possible new api example
 // tries harder to do the right thing if we somehow missed a button down event

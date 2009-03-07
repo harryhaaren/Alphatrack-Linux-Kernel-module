@@ -173,11 +173,11 @@ void TranzportControlProtocol::show_mini_meter()
 	
 	// give some feedback when overdriving - override yellow and red lights
 
-	if (fraction_l > 0.96 || fraction_r > 0.94) {
+	if (fraction_l > 0.94 || fraction_r > 0.94) {
 		light_on (LightLoop);
 	}
 
-	if (fraction_l == 1.0 || fraction_r == 0.98) {
+	if (fraction_l > 0.98 || fraction_r > 0.98) {
 		light_on (LightTrackrec);
 	}
 	
@@ -379,6 +379,6 @@ TranzportControlProtocol::show_track_gain ()
 			last_track_gain = g;
 		}
 	} else {
-		print (0, 9, "        "); 
+		print (0, 12, "        "); 
 	}
 }

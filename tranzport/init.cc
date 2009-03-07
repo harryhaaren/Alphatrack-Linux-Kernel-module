@@ -158,6 +158,12 @@ TranzportControlProtocol::TranzportControlProtocol (Session& s)
 	last_read_error = 0;
 	display_mode = DisplayBling;
 	gain_fraction = 0.0;
+	loop_mode = 0;
+	punch_mode = 0;
+	complex_mode_change = 0;
+	loop_held = 0;
+	add_held = 0;
+	loop_held = 0;
 	invalidate();
 	screen_init();
 	lights_init();
