@@ -194,10 +194,18 @@ TranzportControlProtocol::button_event_in_press (bool shifted)
 	  // FIXME: Having ControlProtocol:ZoomToRegion makes the most sense to me
 	  // Select the region under the playhead on the current tranzport track 
 	  // and zoom. 
-		notify("Zoomed To Region");
+	  // Editor/zoom-to-region does this to the selected on screen track... which is
+	  // not what we want, we want the tranzport's track and region under 
+	  // the playhead
+	  // to be selected and zoomed
+	  // and although I LOVE both-axes
+	  // I need a sane way to get back to a more normal zoomed state
+	  //	  access_action("Editor/zoom-to-region-both-axes");
+	  access_action("Editor/zoom-to-region");
+	  notify("Zoomed To Region");
 	} else {
-		ControlProtocol::ZoomIn (); /* EMIT SIGNAL */
-		notify("Zoomed IN");
+	  ControlProtocol::ZoomIn (); /* EMIT SIGNAL */
+	  notify("Zoomed IN");
 	}
 }
 
@@ -341,6 +349,7 @@ TranzportControlProtocol::button_event_add_release (bool shifted)
 	session->locations()->add (l, true);
 	notify("LOOP START ADD ");
       }
+
       XMLNode &after = session->locations()->get_state();
       session->add_command(new MementoCommand<Locations>(*(session->locations()), &before, &after));
       session->commit_reversible_command ();
