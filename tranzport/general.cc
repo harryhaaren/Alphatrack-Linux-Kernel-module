@@ -244,9 +244,22 @@ TranzportControlProtocol::next_marker ()
 
 
 // FIXME: pay attention to the snap-to settings
-// FIXME: Make reversible
+
 // FIXME: session->locations()->next_available_name(markername,"Tranz");
 // Looks more correct
+// but causes a seg vio on undo.
+/*
+   +  string marker; 
+   +  session->locations()->next_available_name(marker,"Tranz");
+   nframes64_t when = session->audible_frame();
+   session->begin_reversible_command (_("add marker"));
+   XMLNode &before = session->locations()->get_state();
+   -  session->locations()->add (new Location (when, when, note, Location::IsMark),
+ true);
+   +  session->locations()->add (new Location (when, when, marker, Location::IsMark
+), true);
+*/
+
 
 void       
 TranzportControlProtocol::add_marker_snapped ()
