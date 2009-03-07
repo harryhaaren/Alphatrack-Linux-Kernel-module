@@ -266,11 +266,8 @@ TranzportControlProtocol::button_event_loop_release (bool shifted)
   } else {
     if (shifted) {
       // FIXME: Do something more interesting than this?
-      loop_mode = !session->get_play_loop();
-      session->request_play_loop(loop_mode);
     } else {
-      loop_mode = !session->get_play_loop();
-      session->request_play_loop(loop_mode);
+      loop_mode = loop_mode ? 0 : 1;
     }
   }
   loop_held = 0;
@@ -517,7 +514,7 @@ TranzportControlProtocol::button_event_play_press (bool shifted)
 {
   // FIXME: Does not always record, even when the record light is lit
 
-  if(loop_mode) {
+  if(loop_mode == 1) {
     session->request_play_loop (true);
     if (!session->transport_rolling()) {
       session->request_transport_speed (1.0);
