@@ -144,7 +144,7 @@ TranzportControlProtocol::TranzportControlProtocol (Session& s)
 	_datawheel = 0;
 	_device_status = STATUS_OFFLINE;
 	udev = 0;
-	current_track_id = 0;
+	current_track_id = 1;
 	last_where = max_frames;
 	wheel_mode = WheelTimelineSlave;
 	wheel_shift_mode = WheelShiftGain;
