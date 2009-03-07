@@ -190,6 +190,15 @@ TranzportControlProtocol::button_event_undo_release (bool shifted)
 void
 TranzportControlProtocol::button_event_in_press (bool shifted)
 {
+}
+
+
+void
+TranzportControlProtocol::button_event_in_release (bool shifted)
+{
+  // As a side effect of pressing shift + punch + add we get 
+  // these bits set, so ignore stuff if this happens
+  if(!complex_mode_change) {
 	if (shifted) {
 	  // FIXME: Having ControlProtocol:ZoomToRegion makes the most sense to me
 	  // Select the region under the playhead on the current tranzport track 
@@ -207,16 +216,20 @@ TranzportControlProtocol::button_event_in_press (bool shifted)
 	  ControlProtocol::ZoomIn (); /* EMIT SIGNAL */
 	  notify("Zoomed IN");
 	}
-}
-
-void
-TranzportControlProtocol::button_event_in_release (bool shifted)
-{
+  }
 }
 
 void
 TranzportControlProtocol::button_event_out_press (bool shifted)
 {
+}
+
+void
+TranzportControlProtocol::button_event_out_release (bool shifted)
+{
+  // As a side effect of pressing shift + punch + add we get 
+  // these bits set, so ignore stuff if this happens
+  if(!complex_mode_change) {
 	if (shifted) {
 	  ControlProtocol::ZoomToSession (); /* EMIT SIGNAL */
 	  notify("Zoomed To Session");
@@ -224,11 +237,7 @@ TranzportControlProtocol::button_event_out_press (bool shifted)
 	  ControlProtocol::ZoomOut (); /* EMIT SIGNAL */
 	  notify("Zooming Out");
 	}
-}
-
-void
-TranzportControlProtocol::button_event_out_release (bool shifted)
-{
+  }
 }
 
 void
