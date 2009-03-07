@@ -267,6 +267,8 @@ TranzportControlProtocol::button_event_loop_release (bool shifted)
     if (shifted) {
       // FIXME: Do something more interesting than this?
     } else {
+	// FIXME - during playback this doesn't do enough
+
       loop_mode = loop_mode ? 0 : 1;
     }
   }
