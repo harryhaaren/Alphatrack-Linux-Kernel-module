@@ -47,7 +47,7 @@ TranzportControlProtocol::button_event_battery_release (bool shifted)
 // for about 5 seconds after the battery button is released.
 // It does work in the case of a rebind (shifted).
 // So, doing a notify here forces a delayed screen redraw
-// which is not long enough, still
+// which is not long enough, still. Grumble.
 // FIXME: notify should use a fixed timeout rather than loopcount
 
 	screen_invalidate();
@@ -168,10 +168,16 @@ TranzportControlProtocol::button_event_tracksolo_release (bool shifted)
 void
 TranzportControlProtocol::button_event_undo_press (bool shifted)
 {
+  // FIXME: Display what is to be undone
 // undohistory->get_state(1);
 //XMLNode&
 //UndoHistory::get_state (uint32_t depth)
 
+}
+
+void
+TranzportControlProtocol::button_event_undo_release (bool shifted)
+{
 	if (shifted) {
 		redo (); // FIXME: flash the screen with what was redone
 		notify("Redone!!");
@@ -182,16 +188,12 @@ TranzportControlProtocol::button_event_undo_press (bool shifted)
 }
 
 void
-TranzportControlProtocol::button_event_undo_release (bool shifted)
-{
-}
-
-void
 TranzportControlProtocol::button_event_in_press (bool shifted)
 {
 	if (shifted) {
 	  // FIXME: Having ControlProtocol:ZoomToRegion makes the most sense to me
-	  // Select the region under the playhead on the track and zoom.
+	  // Select the region under the playhead on the current tranzport track 
+	  // and zoom. 
 		notify("Zoomed To Region");
 	} else {
 		ControlProtocol::ZoomIn (); /* EMIT SIGNAL */
@@ -325,18 +327,23 @@ TranzportControlProtocol::button_event_add_release (bool shifted)
   if(loop_held | punch_held) {
       complex_mode_change = 1;
     if (loop_held) {
-      // FIXME: create the darn markers here via locations-> magic
+      Location *l = session->locations()->auto_loop_location();
       if(shifted) {
-	notify("LOOP END ADDED FIXME");
+	l->set_end(session->locations()->current()->end());
+	notify("LOOP END ADDED ");
       } else {
-	notify("LOOP START ADDED FIXME");
+	l->set_end(session->locations()->current()->start());
+	notify("LOOP START ADD ");
       }
     } else {
       if (punch_held) {
+      Location *l = session->locations()->auto_loop_location();
       if(shifted) {
-	notify("PNCH END ADDED FIXME");
+	l->set_end(session->locations()->current()->end());
+	notify("PNCH END ADDED ");
       } else {
-	notify("PNCH ST  ADDED FIXME");
+	l->set_start(session->locations()->current()->start());
+	notify("PNCH START ADD ");
       }
       }
     }
@@ -366,7 +373,8 @@ TranzportControlProtocol::button_event_rewind_press (bool shifted)
 {
 	if (shifted) {
 	  if(loop_mode) {
-	    // FIXME: go to beginning of loop
+	    Location *l = session->locations()->auto_loop_location();
+	    session->request_locate(l->start(),session->transport_rolling());
 	  } else {
 		goto_start ();
 	  }
@@ -393,7 +401,8 @@ TranzportControlProtocol::button_event_fastforward_press (bool shifted)
 {
 	if (shifted) {
 	  if(loop_mode) {
-	    // FIXME go to end of loop
+	    Location *l = session->locations()->auto_loop_location();
+	    session->request_locate(l->end(),session->transport_rolling());
 	  } else {
 		goto_end ();
 	  }
