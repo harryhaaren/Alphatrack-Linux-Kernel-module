@@ -1,6 +1,5 @@
 /*
- *   Copyright (C) 2006 Paul Davis 
- *   Copyright (C) 2007 Michael Taht
+ *   Copyright (C) 2006 Paul Davis Copyright (C) 2007 Michael Taht
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -89,15 +88,14 @@ TranzportControlProtocol::scroll ()
   switch(wheel_mode) {
   case WheelTimelineSlave:
   case WheelTimeline: 
-    ScrollTimeline (0.1*_datawheel); break;
+    ScrollTimeline (0.2*_datawheel); break;
   case WheelScrub:
   case WheelShuttle: break;
   default: break;
   }
 }
 
-/* The only difference between scrub and shuttle modes is that
-   we move slower. Not sure if this is right */
+/* Better scrub mode that bounces between .5 and 0.0 as per discussion on the list */
 
 void
 TranzportControlProtocol::scrub ()
@@ -112,11 +110,13 @@ TranzportControlProtocol::scrub ()
 		dir = 1;
 	}	
 	if(dir == 0) return; // not reached
+	if(dir != last_wheel_dir) {
+	  last_wheel_dir = dir;
+	}
 
-	if (dir != last_wheel_dir) {
+	if (dir != last_wheel_dir && speed == 0.0) {
 		/* changed direction, start over */
-		speed = 0.1f;
-		last_wheel_dir = dir; // always reduce initial movement
+		speed = 0.5f;
       		session->request_transport_speed(speed*dir);
 	} else {
 		session->request_transport_speed (speed + .1 * _datawheel);
@@ -132,7 +132,7 @@ TranzportControlProtocol::shuttle ()
     if(speed < 0.0) {
       session->request_transport_speed(1.0);
     } else {
-      session->request_transport_speed(speed + .1 * _datawheel);
+      session->request_transport_speed(speed + .2 * _datawheel);
     }
   }
   
@@ -140,7 +140,7 @@ TranzportControlProtocol::shuttle ()
     if(speed > 0.0) {
       session->request_transport_speed(-1.0);
     } else {
-      session->request_transport_speed(speed + .1 * _datawheel);
+      session->request_transport_speed(speed + .2 * _datawheel);
     }
   }
 }
