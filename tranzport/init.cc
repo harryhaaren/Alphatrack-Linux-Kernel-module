@@ -167,8 +167,7 @@ TranzportControlProtocol::TranzportControlProtocol (Session& s)
 	invalidate();
 	screen_init();
 	lights_init();
-// FIXME: Wait til device comes online somewhere
-// About 3 reads is enough
+// Wait til device comes online. It won't do that until a key is pressed
 // enter_bling_mode();
 
 }
@@ -209,6 +208,7 @@ TranzportControlProtocol::monitor_work ()
 	    timeout=-1;
 	    readfd.events = POLLIN;
 	    screen_invalidate();
+	    lights_invalidate();
 	  }
 	  poll(&readfd,1,timeout);
 	  if(!((readfd.revents & POLLIN) | (readfd.revents & POLLOUT))) {
