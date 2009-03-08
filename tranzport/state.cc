@@ -44,9 +44,6 @@ using namespace PBD;
 
 #include "tranzport_control_protocol.h"
 
-
-// FIXME: How to handle multiple tranzports in a system?
-
 XMLNode&
 TranzportControlProtocol::get_state () 
 {
@@ -61,7 +58,7 @@ TranzportControlProtocol::set_state (const XMLNode& node)
 	cout << "TranzportControlProtocol::set_state: active " << _active << endl;
 	int retval = 0;
 
-// I think I want to make these strings rather than numbers
+// FIXME: Actually save the tranzport state as numbers
 #if 0		
 	// fetch current display mode
 	if ( node.property( X_("display_mode") ) != 0 )

@@ -208,7 +208,6 @@ TranzportControlProtocol::monitor_work ()
 	    timeout=-1;
 	    readfd.events = POLLIN;
 	    screen_invalidate();
-	    lights_invalidate();
 	  }
 	  poll(&readfd,1,timeout);
 	  if(!((readfd.revents & POLLIN) | (readfd.revents & POLLOUT))) {
