@@ -50,8 +50,23 @@ TranzportControlProtocol::light_off (LightID light)
 
 void TranzportControlProtocol::lights_init()
 {
+	light_set(LightRecord,1);
+	light_set(LightTrackrec,1);
+	light_set(LightTrackmute,1);
+	light_set(LightTracksolo,1);
+	light_set(LightAnysolo,1);
+	light_set(LightLoop,1);
+	light_set(LightPunch,1);
+	light_set(LightRecord,0);
+	light_set(LightTrackrec,0);
+	light_set(LightTrackmute,0);
+	light_set(LightTracksolo,0);
+	light_set(LightAnysolo,0);
+	light_set(LightLoop,0);
+	light_set(LightPunch,0);
 	lights_invalid.set();
 	lights_flash = lights_pending = lights_current.reset(); 
+
 }
 
 

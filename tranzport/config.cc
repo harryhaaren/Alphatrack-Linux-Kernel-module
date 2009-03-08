@@ -158,6 +158,7 @@ double frame_to_unit (double frame) const {
 
 */
 
+// FIXME: This is big and buggy
 
 void
 TranzportControlProtocol::snap_to_internal (nframes64_t& start, int32_t direction, bool for_mark)
@@ -206,7 +207,7 @@ TranzportControlProtocol::snap_to_internal (nframes64_t& start, int32_t directio
     if(snap_mode == Editing::SnapOff) {
       FUDGE_64BIT_INC(start,dir); // move by samples instead
     } else {
-      FUDGE_64BIT_INC(start,dir); // move by CD frames instead
+      FUDGE_64BIT_INC(start,dir); // FIXME move by CD frames instead?
 
       if (((dir == 0) && 
 	   (start % (one_second/75) > (one_second/75) / 2)) || 

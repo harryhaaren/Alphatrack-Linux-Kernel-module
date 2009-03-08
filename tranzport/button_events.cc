@@ -276,9 +276,16 @@ TranzportControlProtocol::button_event_loop_release (bool shifted)
     if (shifted) {
       // FIXME: Do something more interesting than this?
     } else {
-	// FIXME - during playback this doesn't do enough
-
+      // FIXME: during playback this doesn't do enough
       loop_mode = loop_mode ? 0 : 1;
+     if (session->transport_rolling()) {
+       if (session->get_play_loop()) {
+	 session->request_play_loop (loop_mode);
+	 session->request_transport_speed (1.0);
+       }
+     } else {
+       if(loop_mode == 0) { session->request_play_loop(false); } 
+     }
     }
   }
   loop_held = 0;
@@ -531,16 +538,16 @@ TranzportControlProtocol::button_event_play_press (bool shifted)
 {
   // FIXME: Does not always record, even when the record light is lit
 
-  if(loop_mode == 1) {
-    session->request_play_loop (true);
-    if (!session->transport_rolling()) {
-      session->request_transport_speed (1.0);
-    }
+  if(shifted) {
+  set_transport_speed(1.0f);
   } else {
-    session->request_play_loop (false);
-    if (shifted) {
-      set_transport_speed (1.0f);
+    if(loop_mode == 1) {
+      session->request_play_loop (true);
+      if (!session->transport_rolling()) {
+	session->request_transport_speed (1.0);
+      }
     } else {
+      session->request_play_loop (false);
       transport_play ();
     }
   }

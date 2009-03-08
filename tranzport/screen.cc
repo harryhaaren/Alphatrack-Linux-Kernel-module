@@ -48,6 +48,8 @@ void TranzportControlProtocol::screen_validate ()
 void TranzportControlProtocol::screen_init ()
 {
 	screen_invalidate();
+	screen_clear();
+	screen_flush();
 }
 
 // FIXME: Switch to a column oriented flush to make the redraw of the 
