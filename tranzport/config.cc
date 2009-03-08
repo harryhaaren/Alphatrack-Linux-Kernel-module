@@ -168,14 +168,22 @@ double frame_to_unit (double frame) const {
 // then let ardour be pendantic and round to the closest beat on that subdivision
 // call it a day
 
+#define sign(a) ((a < 0) ? -1 : 1)
 nframes64_t
 TranzportControlProtocol::snap_to_beat_subdivision(nframes64_t start, SnapType snap, int32_t direction) 
 {
+  static double cached_distance = 0;
   // static TempoMap t;
   //  TempoMap temp(start);
+  if(cached_distance == 0) {
+    nframes64_t newstart = session->tempo_map().round_to_bar (start, sign(direction));
+    nframes64_t newstart2 = session->tempo_map().round_to_bar (start, -sign(direction));
+    cached_distance = abs(newstart - newstart2);
+  }
+
   double subdivision = 0.0;
   int r = 0;
-  double distance = 0.0 ; //   Beatsamples = temp->distance;
+  double distance = cached_distance ; 
 
   switch(snap) {
   case SnapToBar: r = 1; subdivision = 1.0; break;
@@ -335,40 +343,13 @@ if (((dir == 0) && (start % one_minute > one_minute / 2)) || (dir > 0)) {
     break;
     
   case SnapToBar:
-        FUDGE_64BIT_INC(start,dir);
-	start = session->tempo_map().round_to_bar (start, dir);
-    break;
-    
-  case SnapToBeat:
-    FUDGE_64BIT_INC(start,dir);
-    newstart = start;
-    start = session->tempo_map().round_to_beat (start, dir);
-    break;
-    
-  case SnapToAThirtysecondBeat:
-    FUDGE_64BIT_INC(start,dir);
-    start = session->tempo_map().round_to_beat_subdivision (start, 32);
-    break;
-    
-  case SnapToASixteenthBeat:
-    FUDGE_64BIT_INC(start,dir);
-    start = session->tempo_map().round_to_beat_subdivision (start, 16);
-    break;
-    
-  case SnapToAEighthBeat:
-    FUDGE_64BIT_INC(start,dir);
-    start = session->tempo_map().round_to_beat_subdivision (start, 8);
-    break;
-    
-  case SnapToAQuarterBeat:
-    FUDGE_64BIT_INC(start,dir);
-    start = session->tempo_map().round_to_beat_subdivision (start, 4);
-    break;
-    
-  case SnapToAThirdBeat:
-    FUDGE_64BIT_INC(start,dir);
-    start = session->tempo_map().round_to_beat_subdivision (start, 3);
-    break;
+  case SnapToBeat: 
+  case SnapToAThirtysecondBeat: 
+  case SnapToASixteenthBeat: 
+  case SnapToAEighthBeat: 
+  case SnapToAQuarterBeat: 
+  case SnapToAThirdBeat: 
+    start = snap_to_beat_subdivision(start,snap_to,direction); return; break;
     
   case SnapToMark:
     if (for_mark) {
