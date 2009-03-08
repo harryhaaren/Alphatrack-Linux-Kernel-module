@@ -179,10 +179,10 @@ void
 TranzportControlProtocol::button_event_undo_release (bool shifted)
 {
 	if (shifted) {
-		redo (); // FIXME: flash the screen with what was redone
+		access_action("Editor/redo"); // redo (); // FIXME: flash the screen with what was redone
 		notify("Redone!!");
 	} else {
-		undo (); // FIXME: flash the screen with what was undone
+		access_action("Editor/undo"); // redo (); // FIXME: flash the screen with what was redone
 		notify("Undone!!");
 	}
 }
