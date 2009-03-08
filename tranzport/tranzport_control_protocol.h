@@ -345,7 +345,7 @@ private:
 	const char *snapto_string(Editing::SnapType snap);
 	void go_snap_to (nframes64_t& start, int32_t direction, bool for_mark);
 	void snap_to_internal (nframes64_t& start, int32_t direction, bool for_mark);
-	
+	nframes64_t snap_to_beat_subdivision(nframes64_t, Editing::SnapType, int32_t);	
 	void button_event_battery_press (bool shifted);
 	void button_event_battery_release (bool shifted);
 	void button_event_backlight_press (bool shifted);
