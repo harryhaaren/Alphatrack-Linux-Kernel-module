@@ -10,6 +10,8 @@
 
 using namespace Editing;
 
+#define CopeWithNframes_t(a) ZEROIFNEG(MIN(a,UINT_MAX))
+
 static inline void FUDGE_64BIT_INC(nframes64_t &a, int dir) {
   switch(dir) {
   case 0: break;
@@ -169,9 +171,13 @@ double frame_to_unit (double frame) const {
 // call it a day
 
 #define sign(a) ((a < 0) ? -1 : 1)
+
 nframes64_t
 TranzportControlProtocol::snap_to_beat_subdivision(nframes64_t start, SnapType snap, int32_t direction) 
 {
+// Turned out that this was rarely getting called withe args > abs(1)
+// However the movement is still blocky. FIXME: Wheel input is too efficient! 
+// printf("snap_to_beat called with %d\n", direction);
   static double cached_distance = 0;
   // static TempoMap t;
   //  TempoMap temp(start);
@@ -197,10 +203,13 @@ TranzportControlProtocol::snap_to_beat_subdivision(nframes64_t start, SnapType s
   }
 
   start += lrint(distance * direction * subdivision);
+  start = CopeWithNframes_t(start);
   // MINMAXCHECK() pesky unsigned ints
   start = session->tempo_map().round_to_beat_subdivision(start,r);
+
   //  MINMAXCHECK() pesky unsigned ints;
-  return start;
+  start = CopeWithNframes_t(start);
+  return start;  
 }
 
 // FIXME: This is big and buggy. Break it apart.
