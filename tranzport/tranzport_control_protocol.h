@@ -342,6 +342,7 @@ private:
 
 	XMLNode *editor_settings ();
 	Editing::SnapType get_snapto ();
+	const char *snapto_string(Editing::SnapType snap);
 	void go_snap_to (nframes64_t& start, int32_t direction, bool for_mark);
 	void snap_to_internal (nframes64_t& start, int32_t direction, bool for_mark);
 	

@@ -53,11 +53,39 @@ Editing::SnapType TranzportControlProtocol::get_snapto ()
 return (snap_to);
 }
 
+// Having these translated would be bad as we don't have 
+// an international character set on the tranzport
+
+const char * TranzportControlProtocol::snapto_string(SnapType snap) {
+  switch (snap) {
+  case SnapToCDFrame: return("CD Frame"); break;
+  case SnapToSMPTEFrame: return("SMPTE Frame"); break;
+  case SnapToSMPTESeconds: return("SMPTE Secs"); break;
+  case SnapToSMPTEMinutes: return("SMTPE Mins"); break;
+  case SnapToSeconds: return("Seconds"); break;
+  case SnapToMinutes: return("Minutes"); break;
+  case SnapToBar:     return("Bars   "); break;
+  case SnapToBeat:    return("Beats  "); break;
+  case SnapToAThirtysecondBeat: return("1/32 Beat"); break;
+  case SnapToASixteenthBeat: return("1/16 Beat"); break;
+  case SnapToAEighthBeat:  return(" 1/8 Beat"); break;
+  case SnapToAQuarterBeat: return(" 1/4 Beat"); break;
+  case SnapToAThirdBeat: return(" 1/3 Beat"); break;
+  case SnapToMark:       return(" Marks   "); break;
+  case SnapToRegionStart:return("Reg Start"); break;
+  case SnapToRegionEnd: return("Reg End  "); break;
+  case SnapToRegionSync: return("Reg Sync "); break;
+  case SnapToRegionBoundary: return("Reg Bound"); break;
+  default: return("Unk Snap"); break;
+  }
+ return("Unk Snap"); /* not reached */
+}  
+
 void
 TranzportControlProtocol::next_snapto_mode ()
 {
   switch (snap_to) {
-  case SnapToCDFrame: snap_to = SnapToSMPTEFrame;
+  case SnapToCDFrame: snap_to = SnapToSMPTEFrame; break;
   case SnapToSMPTEFrame: snap_to = SnapToSMPTESeconds; break;
   case SnapToSMPTESeconds: snap_to = SnapToSMPTEMinutes; break;
   case SnapToSMPTEMinutes: snap_to = SnapToSeconds; break;
@@ -76,10 +104,10 @@ TranzportControlProtocol::next_snapto_mode ()
   case SnapToRegionEnd:
   case SnapToRegionSync:
   case SnapToRegionBoundary: 
-  default: snap_to = SnapToSeconds; break;
+  default: snap_to = SnapToCDFrame; break;
   }
-
-  notify("SnapTo:"); // FIXME convert to text
+  string note = string_compose("SnapTo: %1", snapto_string(snap_to));
+  notify(note.c_str()); 
 }
 
 /*

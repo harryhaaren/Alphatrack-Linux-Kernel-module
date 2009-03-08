@@ -214,7 +214,7 @@ TranzportControlProtocol::button_event_in_release (bool shifted)
 	  notify("Zoomed To Region");
 	} else {
 	  ControlProtocol::ZoomIn (); /* EMIT SIGNAL */
-	  notify("Zoomed IN");
+	  notify("Zooming IN");
 	}
   }
 }
@@ -425,7 +425,6 @@ TranzportControlProtocol::button_event_add_release (bool shifted)
   } else {
     if(shifted) {
       next_snapto_mode();
-      notify("Change SNAPTO FIXME"); // FIXME
     } else {
       add_marker_snapped();
     }
@@ -556,7 +555,9 @@ void
 TranzportControlProtocol::button_event_record_press (bool shifted)
 {
 	if (shifted) {
-		save_state ();
+	  save_state (); // FIXME: Does this do anything useful?
+	  access_action("Editor/Save"); // Sleep better at night.
+	  notify("Saved!");
 	} else {
 		rec_enable_toggle ();
 	}

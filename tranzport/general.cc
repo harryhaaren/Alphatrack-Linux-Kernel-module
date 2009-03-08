@@ -32,7 +32,7 @@ using namespace PBD;
 // HA, I don't need this anymore
 #include <slider_gain.h>
 
-//   FIXME, flash recording light when recording and transport is moving
+//   FIXME, flash recording, and/or punch light when recording and transport is moving
 int TranzportControlProtocol::lights_show_recording() 
 {
 	return     lights_show_normal();
@@ -209,13 +209,16 @@ TranzportControlProtocol::change_marker (int steps)
 	} else {
 	if(steps > 0) {
 		session->goto_end ();
-		notify("END  ");
+		notify("End      ");
 	} else {
 		session->goto_start ();
-		notify("START");
+		notify("START    ");
 	}
     } 
 }
+
+// FIXME: add_marker and prev_marker are basically obsolete now
+
 void
 TranzportControlProtocol::prev_marker ()
 {
@@ -281,6 +284,7 @@ TranzportControlProtocol::add_marker_snapped ()
 }
 
 // We want to go to all marker types - loop, punch, cd, regular markers
+// FIXME: And we want to go to loop, punc, and cd ENDS, too.
 
 void
 TranzportControlProtocol::prev_marker_any ()
@@ -292,11 +296,12 @@ TranzportControlProtocol::prev_marker_any ()
     notify(location->name().c_str());
   } else {
     session->goto_start ();
-    notify("STRT");
+    notify("Start   ");
   }
 }
 
 // We want to go to all marker types - loop, punch, cd, regular markers
+// FIXME: And we want to go to loop, punc, and cd ENDS, too.
 
 void
 TranzportControlProtocol::next_marker_any ()
@@ -309,7 +314,7 @@ TranzportControlProtocol::next_marker_any ()
     notify(location->name().c_str());
   } else {
     session->request_locate (session->current_end_frame());
-    notify("END ");
+    notify("END     ");
   }
 }
 
