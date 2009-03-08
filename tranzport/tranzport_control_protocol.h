@@ -332,6 +332,7 @@ private:
 	void config ();
 
 	void next_wheel_mode ();
+	void next_snapto_mode ();
 	void next_wheel_shift_mode ();
 
 	void set_current_track (ARDOUR::Route*);

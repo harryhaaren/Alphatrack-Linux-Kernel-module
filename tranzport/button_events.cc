@@ -339,7 +339,6 @@ TranzportControlProtocol::button_event_add_press (bool shifted)
 void
 TranzportControlProtocol::button_event_add_release (bool shifted)
 {
-  // FIXME nframes64_t for ardour3?
   string loop;
   Location *loc;
   Location *newloc;
@@ -350,7 +349,7 @@ TranzportControlProtocol::button_event_add_release (bool shifted)
     if (loop_held) {
       loc = session->locations()->auto_loop_location();
       if(loc==0) {
-	newloc = new Location(0.0,session->current_end_frame(),_("Loop"), Location::Flags(Location::IsAutoLoop));
+	newloc = new Location(session->current_end_frame(),session->current_end_frame()-1,_("Loop"), Location::Flags(Location::IsAutoLoop));
 	wasnull = 1;
       } else {
 	newloc = new Location(*loc);
@@ -367,8 +366,9 @@ TranzportControlProtocol::button_event_add_release (bool shifted)
 	newloc->set_start(session->transport_frame());
       }
 
+      // FIXME:  This should default to 4 bars
       if (newloc->start() >= newloc->end()) {
-	newloc->set_end (newloc->start() + 1);
+	newloc->set_start (newloc->end() - 400);
       }
       session->locations()->add (newloc,true);
       session->set_auto_loop_location (newloc);
@@ -387,7 +387,7 @@ TranzportControlProtocol::button_event_add_release (bool shifted)
       if (punch_held) {
       loc = session->locations()->auto_punch_location();
       if(loc==0) {
-	newloc = new Location(0.0,session->current_end_frame(),_("Loop"), Location::Flags(Location::IsAutoPunch));
+	newloc = new Location(session->current_end_frame(),session->current_end_frame()-1,_("Loop"), Location::Flags(Location::IsAutoPunch));
 	wasnull = 1;
       } else {
 	newloc = new Location(*loc);
@@ -404,9 +404,11 @@ TranzportControlProtocol::button_event_add_release (bool shifted)
 	newloc->set_start(session->transport_frame());
       }
 
+      // FIXME:  This should default to 4 bars
       if (newloc->start() >= newloc->end()) {
-	newloc->set_end (newloc->start() + 1);
+	newloc->set_start (newloc->end() - 400);
       }
+
       session->locations()->add (newloc,true);
       session->set_auto_punch_location (newloc);
       XMLNode &after = session->locations()->get_state();
@@ -421,7 +423,12 @@ TranzportControlProtocol::button_event_add_release (bool shifted)
       }
     }
   } else {
-    add_marker_snapped();
+    if(shifted) {
+      next_snapto_mode();
+      notify("Change SNAPTO FIXME"); // FIXME
+    } else {
+      add_marker_snapped();
+    }
   }
   add_held = 0;
 }

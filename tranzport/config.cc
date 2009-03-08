@@ -8,13 +8,15 @@
 
 #include "i18n.h"
 
+using namespace Editing;
+
 static inline void FUDGE_64BIT_INC(nframes64_t &a, int dir) {
-	switch(dir) {
-		case 0: break;
-		case 1: a++;
-		case -1: a = ZEROIFNEG(--a);
-		default: break;
-	}
+  switch(dir) {
+  case 0: break;
+  case 1: a = MIN(++a,UINT_MAX); 
+  case -1: a = ZEROIFNEG(--a);
+  default: break;
+  }
 }
 
 XMLNode *TranzportControlProtocol::editor_settings ()
@@ -28,6 +30,7 @@ XMLNode *TranzportControlProtocol::editor_settings ()
         }
         return node;
 }
+
 
 Editing::SnapType TranzportControlProtocol::get_snapto () 
 {
@@ -48,6 +51,35 @@ Editing::SnapType TranzportControlProtocol::get_snapto ()
         }
 
 return (snap_to);
+}
+
+void
+TranzportControlProtocol::next_snapto_mode ()
+{
+  switch (snap_to) {
+  case SnapToCDFrame: snap_to = SnapToSMPTEFrame;
+  case SnapToSMPTEFrame: snap_to = SnapToSMPTESeconds; break;
+  case SnapToSMPTESeconds: snap_to = SnapToSMPTEMinutes; break;
+  case SnapToSMPTEMinutes: snap_to = SnapToSeconds; break;
+  case SnapToSeconds: snap_to = SnapToMinutes; break;
+  case SnapToMinutes: snap_to = SnapToBar; break;
+  case SnapToBar: snap_to = SnapToBeat; break;
+  case SnapToBeat: snap_to = SnapToAThirtysecondBeat; break;
+  case SnapToAThirtysecondBeat: snap_to = SnapToASixteenthBeat; break;
+  case SnapToASixteenthBeat: snap_to = SnapToAEighthBeat; break;
+  case SnapToAEighthBeat: snap_to = SnapToAQuarterBeat; break;
+  case SnapToAQuarterBeat: snap_to = SnapToAThirdBeat; break;
+  case SnapToAThirdBeat: snap_to = SnapToMark; break;
+  case SnapToMark: snap_to = SnapToCDFrame; break;
+    // Haven't figured these out yet
+  case SnapToRegionStart:
+  case SnapToRegionEnd:
+  case SnapToRegionSync:
+  case SnapToRegionBoundary: 
+  default: snap_to = SnapToSeconds; break;
+  }
+
+  notify("SnapTo:"); // FIXME convert to text
 }
 
 /*
