@@ -1,0 +1,68 @@
+# -*- python -*-
+
+import os
+import os.path
+import glob
+
+Import('env final_prefix install_prefix final_config_prefix libraries i18n')
+
+alphatrack = env.Clone()
+
+#
+# this defines the version number of libardour_alphatrack
+# 
+
+domain = 'ardour_alphatrack'
+
+alphatrack.Append(DOMAIN = domain, MAJOR = 1, MINOR = 0, MICRO = 0)
+alphatrack.Append(CXXFLAGS = "-DPACKAGE=\\\"" + domain + "\\\"")
+alphatrack.Append(CXXFLAGS="-DLIBSIGC_DISABLE_DEPRECATED")
+alphatrack.Append(PACKAGE = domain)
+alphatrack.Append(POTFILE = domain + '.pot')
+
+alphatrack_files=Split("""
+interface.cc
+alphatrack.cc
+""")
+
+#figure out when to do
+#io_usb.cc
+#io_midi.cc
+#io_kernel.cc
+
+alphatrack.Append(CCFLAGS="-D_REENTRANT -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE")
+alphatrack.Append(CXXFLAGS="-DDATA_DIR=\\\""+final_prefix+"/share\\\"")
+alphatrack.Append(CXXFLAGS="-DCONFIG_DIR=\\\""+final_config_prefix+"\\\"")
+alphatrack.Append(CXXFLAGS="-DLOCALEDIR=\\\""+final_prefix+"/share/locale\\\"")
+#if env['HAVE_ALPHATRACK_KERNEL_DRIVER']:
+#    alphatrack.Append(CXXFLAGS="-DHAVE_ALPHATRACK_KERNEL_DRIVER=1")
+
+#merge more into alphatrack files for the right io lib
+alphatrack.Append(CPPPATH = libraries['jack'].get('CPPPATH', []))
+
+alphatrack.Merge ([
+    libraries['ardour'],
+    libraries['ardour_cp'],
+    libraries['sigc2'],
+    libraries['pbd'],
+    libraries['midi++2'],
+    libraries['xml'],
+    libraries['glib2'],
+    libraries['glibmm2'],
+    libraries['sndfile-ardour']
+    ])
+
+libardour_alphatrack = alphatrack.SharedLibrary('ardour_alphatrack', alphatrack_files)
+
+if alphatrack['ALPHATRACK']:
+    Default(libardour_alphatrack)
+    if env['NLS']:
+        i18n (alphatrack, alphatrack_files, env)
+#    if env['HAVE_ALPHATRACK_KERNEL_DRIVER']:
+#        alphatrack.Merge([ libraries['usb'] ])
+    env.Alias('install', env.Install(os.path.join(install_prefix, env['LIBDIR'], 'ardour2', 'surfaces'), libardour_alphatrack))
+
+env.Alias('tarball', env.Distribute (env['DISTTREE'],
+                     [ 'SConscript' ] +
+                     alphatrack_files + 
+                     glob.glob('po/*.po') + glob.glob('*.h')))
