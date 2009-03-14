@@ -34,6 +34,7 @@ XMLNode *TranzportControlProtocol::editor_settings ()
 }
 
 
+
 SnapType TranzportControlProtocol::get_snapto () 
 {
 	const XMLProperty* prop;
@@ -43,6 +44,47 @@ SnapType TranzportControlProtocol::get_snapto ()
 	  snap_mode = SnapNormal; // Grid
 	  return snap_to;
 	}
+
+	// Get clock settings for master clock
+
+	/*
+        if (s) {
+
+                XMLProperty* prop;
+                XMLNode* node = session->extra_xml (X_("ClockModes"));
+                AudioClock::Mode amode;
+
+                if (node) {
+                        if ((prop = node->property ("primary")) != 0) {
+                                amode = AudioClock::Mode (string_2_enum (prop->value(), amode));
+                                set_mode (amode);
+                        }
+                }
+		elsewhere:
+
+        REGISTER_CLASS_ENUM (AudioClock, SMPTE);
+        REGISTER_CLASS_ENUM (AudioClock, BBT);
+        REGISTER_CLASS_ENUM (AudioClock, MinSec);
+        REGISTER_CLASS_ENUM (AudioClock, Frames);
+        REGISTER_CLASS_ENUM (AudioClock, Off);
+
+                set (last_when, true);
+
+       enum Mode {
+                SMPTE,
+                BBT,
+                MinSec,
+                Frames,
+                Off
+        };
+
+
+        }
+}
+
+void
+
+	 */
 
         if ((prop = node->property ("snap-to"))) {
 	  snap_to = (SnapType) atoi (prop->value().c_str());
@@ -147,15 +189,15 @@ TranzportControlProtocol::go_snap_to (nframes64_t& start, int32_t direction, boo
 /* Don't understand what these do yet
 
 nframes64_t unit_to_frame (double unit) const {
-  return (nframes64_t) rint (unit * frames_per_unit);
+  return (nframes64_t) lrint (unit * frames_per_unit);
 }
 
 double frame_to_unit (nframes64_t frame) const {
-  return rint ((double) frame / (double) frames_per_unit);
+  return lrint ((double) frame / (double) frames_per_unit);
 }
 
 double frame_to_unit (double frame) const {
-  return rint (frame / frames_per_unit);
+  return lrint (frame / frames_per_unit);
 }
 
 */
@@ -180,7 +222,8 @@ TranzportControlProtocol::snap_to_beat_subdivision(nframes64_t start, SnapType s
 // printf("snap_to_beat called with %d\n", direction);
   static double cached_distance = 0;
   // static TempoMap t;
-  //  TempoMap temp(start);
+  // TempoMap& map (session->tempo_map());
+
   if(cached_distance == 0) {
     nframes64_t newstart = session->tempo_map().round_to_bar (start, sign(direction));
     nframes64_t newstart2 = session->tempo_map().round_to_bar (start, -sign(direction));
@@ -204,10 +247,7 @@ TranzportControlProtocol::snap_to_beat_subdivision(nframes64_t start, SnapType s
 
   start += lrint(distance * direction * subdivision);
   start = CopeWithNframes_t(start);
-  // MINMAXCHECK() pesky unsigned ints
   start = session->tempo_map().round_to_beat_subdivision(start,r);
-
-  //  MINMAXCHECK() pesky unsigned ints;
   start = CopeWithNframes_t(start);
   return start;  
 }
@@ -227,14 +267,16 @@ TranzportControlProtocol::snap_to_internal (nframes64_t& start, int32_t directio
   ARDOUR::Location* after = 0;
 
   const nframes64_t one_second = session->frame_rate();
-  const nframes64_t one_minute = session->frame_rate() * 60;
+  const nframes64_t one_minute = one_second * 60;
   const nframes64_t one_smpte_second = 
-	(nframes64_t)(rint(session->smpte_frames_per_second()) *
+	(nframes64_t)(lrint(session->smpte_frames_per_second()) *
 	session->frames_per_smpte_frame());
+  nframes64_t frames_per_smpte_frame = session->frames_per_smpte_frame();
   nframes64_t one_smpte_minute = 
-	(nframes64_t)(rint(session->smpte_frames_per_second()) * 
-	session->frames_per_smpte_frame() * 60);
+	(nframes64_t)(lrint(session->smpte_frames_per_second()) * 
+	 frames_per_smpte_frame * 60);
   nframes64_t presnap = start;
+  
   float speed = session->transport_speed();
 
   // FIXME: When the transport is moving it does you very little good
@@ -282,11 +324,11 @@ TranzportControlProtocol::snap_to_internal (nframes64_t& start, int32_t directio
     break;
     
   case SnapToSMPTEFrame:
-      FUDGE_64BIT_INC(start,dir); 
-    if (((dir == 0) && (fmod((double)start, (double)session->frames_per_smpte_frame()) > (session->frames_per_smpte_frame() / 2))) || (dir > 0)) {
-      start = (nframes64_t) (ceil ((double) start / session->frames_per_smpte_frame()) * session->frames_per_smpte_frame());
+    FUDGE_64BIT_INC(start,dir); 
+    if (((dir == 0) && (fmod((double)start, (double) frames_per_smpte_frame) > (frames_per_smpte_frame / 2))) || (dir > 0)) {
+      start = (nframes64_t) (ceil ((double)  start  / frames_per_smpte_frame) * frames_per_smpte_frame);
     } else {
-      start = (nframes64_t) (floor ((double) start / session->frames_per_smpte_frame()) *  session->frames_per_smpte_frame());
+      start = (nframes64_t) (floor ((double) start / frames_per_smpte_frame) * frames_per_smpte_frame);
     }
     break;
     
@@ -297,11 +339,12 @@ TranzportControlProtocol::snap_to_internal (nframes64_t& start, int32_t directio
 	start += session->smpte_offset ();
       } else {
       start -= session->smpte_offset ();
-    }    
+    }  
+  
     if (((dir == 0) && (start % one_smpte_second > one_smpte_second / 2)) || dir > 0) {
-      start = (nframes64_t) ceil ((double) start / one_smpte_second) * one_smpte_second;
+      start = (nframes64_t) ceil ((start / one_smpte_second) * one_smpte_second;
     } else {
-      start = (nframes64_t) floor ((double) start / one_smpte_second) * one_smpte_second;
+      start = (nframes64_t) floor ((start / one_smpte_second) * one_smpte_second;
     }
     
     if (session->smpte_offset_negative())
@@ -343,8 +386,8 @@ TranzportControlProtocol::snap_to_internal (nframes64_t& start, int32_t directio
     break;
     
   case SnapToMinutes:
-          FUDGE_64BIT_INC(start,dir);
-if (((dir == 0) && (start % one_minute > one_minute / 2)) || (dir > 0)) {
+    FUDGE_64BIT_INC(start,dir);
+    if (((dir == 0) && (start % one_minute > one_minute / 2)) || (dir > 0)) {
       start = (nframes64_t) ceil ((double) start / one_minute) * one_minute;
     } else {
       start = (nframes64_t) floor ((double) start / one_minute) * one_minute;
@@ -465,7 +508,8 @@ if (((dir == 0) && (start % one_minute > one_minute / 2)) || (dir > 0)) {
    is going nuts trying to keep up with a very rapid string of requests.
 */
 
-	if(dir > 0) { 
+  start = CopeWithNframes_t(start);
+  if(dir > 0) { 
 	  --direction; // start++;  
 	  snap_to_internal(start, direction, for_mark); 
 	} else {
