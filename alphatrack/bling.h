@@ -1,3 +1,11 @@
+enum BlingColors {
+    BlingGreen,
+    BlingRed,
+    BlingYellow,
+    BlingBlue
+  };
+   
+
 class Bling {
  public:
   enum BlingMode {
@@ -24,7 +32,8 @@ class Bling {
   enum BlingColors {
     BlingGreen,
     BlingRed,
-    BlingYellow
+    BlingYellow,
+    BlingBlue
   };
    
   Bling(void) {
