@@ -88,3 +88,8 @@ if on.
 Record light should flash (tempo) during recording
 It would be nice if markers went by while playing
 Display, in slave mode, should slave to the first clock's format
+
+More stuff:
+
+ Session::master_out() to find the master outs. Use stop+mute perhaps
+to be a panic button

@@ -76,6 +76,9 @@ TranzportControlProtocol::button_event_backlight_release (bool shifted)
 void
 TranzportControlProtocol::button_event_trackleft_press (bool shifted)
 {
+  if(shifted) {
+    // Do something intelligent
+  } else {
 	change_track (-1);
 	// not really the right layer for this
 	if(display_mode == DisplayBigMeter) { 
@@ -83,6 +86,7 @@ TranzportControlProtocol::button_event_trackleft_press (bool shifted)
 			notify(route_get_name (0).substr (0, 15).c_str());
 		}
 	}
+  }
 }
 
 void
@@ -93,6 +97,9 @@ TranzportControlProtocol::button_event_trackleft_release (bool shifted)
 void
 TranzportControlProtocol::button_event_trackright_press (bool shifted)
 {
+  if(shifted) {
+    // Do something intelligent
+  } else {
 	change_track (1); 
 	// not really the right layer for this
 	if(display_mode == DisplayBigMeter) { 
@@ -100,6 +107,7 @@ TranzportControlProtocol::button_event_trackright_press (bool shifted)
 			notify(route_get_name (0).substr (0, 15).c_str());
 		}
 	}
+  }
 }
 
 void
