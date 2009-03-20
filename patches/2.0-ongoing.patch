@@ -1,0 +1,70 @@
+Index: SConstruct
+===================================================================
+--- SConstruct	(revisión: 4871)
++++ SConstruct	(copia de trabajo)
+@@ -32,7 +32,7 @@
+ opts = Options('scache.conf')
+ opts.AddOptions(
+     ('ARCH', 'Set architecture-specific compilation flags by hand (all flags as 1 argument)',''),
+-    ('WINDOWS_KEY', 'Set X Modifier (Mod1,Mod2,Mod3,Mod4,Mod5) for "Windows" key', 'Mod4><Super'),
++    ('WINDOWS_KEY', 'Set X Modifier (Mod1,Mod2,Mod3,Mod4,Mod5) for "Windows" key', 'Mod4'),
+     BoolOption('AUDIOUNITS', 'Compile with Apple\'s AudioUnit library. (experimental)', 0),
+     BoolOption('COREAUDIO', 'Compile with Apple\'s CoreAudio library', 0),
+     BoolOption('GTKOSX', 'Compile for use with GTK-OSX, not GTK-X11', 0),
+@@ -59,6 +59,8 @@
+     BoolOption('GPROFILE', 'Compile with support for gprofile (Developers only)', 0),
+     BoolOption('FREEDESKTOP', 'Install MIME type, icons and .desktop file as per the freedesktop.org spec (requires xdg-utils and shared-mime-info). "scons uninstall" removes associations in desktop database', 0),
+     BoolOption('TRANZPORT', 'Compile with support for Frontier Designs (if libusb is available)', 1),
++    BoolOption('KERNELTRANZPORT', 'Compile with linux kernel support for Frontier Designs', 1),
++    BoolOption('ALPHATRACK', 'Compile with ALPHATRACK support', 1),
+     BoolOption('AUBIO', "Use Paul Brossier's aubio library for feature detection (if available)", 1),
+     BoolOption('AUSTATE', "Build with support for AU settings & presets saving/loading", 0)
+ )
+@@ -1205,27 +1207,34 @@
+ 
+ surface_subdirs = [ 'libs/surfaces/control_protocol',
+                     'libs/surfaces/generic_midi',
+-                    'libs/surfaces/tranzport',
+                     'libs/surfaces/mackie',
+                     'libs/surfaces/powermate',
+ 		    'libs/surfaces/wiimote'
+                     ]
+ 
+ if env['SURFACES']:
+-    if have_libusb:
+-        env['TRANZPORT'] = 1
+-    else:
+-        env['TRANZPORT'] = 0
+-        print 'Disabled building Tranzport code because libusb could not be found'
++	if config[config_kernel] == 'linux' :
++		env['KERNELTRANZPORT'] = 1
++		surface_subdirs += [ 'libs/surfaces/frontier/tranzport' ]
++		surface_subdirs += [ 'libs/surfaces/frontier/alphatrack' ]
++		print 'Building Linux Kernel based Alphatrack+Tranzport code'
++	else:
++		if have_libusb:
++			env['TRANZPORT'] = 1
++			surface_subdirs += [ 'libs/surfaces/tranzport' ]
++			print 'Building libusb Tranzport code'
++		else:
++			env['TRANZPORT'] = 0
++			print 'Disabled building Tranzport code because libusb could not be found'
+ 
+-    if have_linux_input:
+-        env['POWERMATE'] = 1
+-    else:
+-        env['POWERMATE'] = 0
+-        print 'Disabled building Powermate code because linux/input.h could not be found'
++	if have_linux_input:
++		env['POWERMATE'] = 1
++	else:
++		env['POWERMATE'] = 0
++		print 'Disabled building Powermate code because linux/input.h could not be found'
+ 
+-    if os.access ('libs/surfaces/sony9pin', os.F_OK):
+-        surface_subdirs += [ 'libs/surfaces/sony9pin' ]
++	if os.access ('libs/surfaces/sony9pin', os.F_OK):
++		surface_subdirs += [ 'libs/surfaces/sony9pin' ]
+ else:
+     env['POWERMATE'] = 0
+     env['TRANZPORT'] = 0
