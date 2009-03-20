@@ -342,9 +342,9 @@ TranzportControlProtocol::snap_to_internal (nframes64_t& start, int32_t directio
     }  
   
     if (((dir == 0) && (start % one_smpte_second > one_smpte_second / 2)) || dir > 0) {
-      start = (nframes64_t) ceil ((start / one_smpte_second) * one_smpte_second;
+      start = (nframes64_t) ceil ((start / one_smpte_second) * one_smpte_second);
     } else {
-      start = (nframes64_t) floor ((start / one_smpte_second) * one_smpte_second;
+	start = (nframes64_t) floor ((start / one_smpte_second) * one_smpte_second);
     }
     
     if (session->smpte_offset_negative())
