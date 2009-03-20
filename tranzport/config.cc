@@ -218,8 +218,13 @@ nframes64_t
 TranzportControlProtocol::snap_to_beat_subdivision(nframes64_t start, SnapType snap, int32_t direction) 
 {
 // Turned out that this was rarely getting called withe args > abs(1)
-// However the movement is still blocky. FIXME: Wheel input is too efficient! 
+// However the movement is still blocky, and sometimes results in the transport stopping
+// FIXME: Wheel input is too efficient! 
+// wait for sigc::signal<void,nframes_t> PositionChanged; sent after 
+// any non-sequential motion ? queue up changes til then?
+
 // printf("snap_to_beat called with %d\n", direction);
+
   static double cached_distance = 0;
   // static TempoMap t;
   // TempoMap& map (session->tempo_map());
