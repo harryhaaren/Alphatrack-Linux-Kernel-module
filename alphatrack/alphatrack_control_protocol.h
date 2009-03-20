@@ -28,11 +28,6 @@
 #include <bitset>
 #include <sys/time.h>
 #include <pthread.h>
-
-#if !HAVE_ALPHATRACK_KERNEL_DRIVER
-#include <usb.h>
-#endif
-
 #include <glibmm/thread.h>
 #include <ardour/types.h>
 
@@ -59,7 +54,6 @@ private:
         const static int LIGHTS = 25;
         const static int ROWS = 2;
         const static int COLUMNS = 16;
-	const static uint8_t WheelDirectionThreshold = 0x7f;
 
 	enum LightID {
 	  LightEQ = 0,
@@ -97,7 +91,7 @@ private:
 	  ButtonRecord      =0x02000000,
 	  ButtonShift       =0x20000000,
 	  ButtonPunch       =0x00800000,
-	  ButtonTrackright  =0x00020000,
+	  ButtonTrackRight  =0x00020000,
 	  ButtonRewind      =0x01000000,
 	  ButtonStop        =0x10000000,
 	  ButtonLoop        =0x00010000,
@@ -123,6 +117,7 @@ private:
 	  ButtonEQ           =0x00004000,
 	  ButtonPlugin       =0x00000400,
 	  ButtonAuto         =0x00000100,
+	  ButtonFootswitch = 0x11111111, // FIXME, lie
 	};
 
 	enum WheelShiftMode {
@@ -172,18 +167,14 @@ private:
 	};
 	
 	pthread_t       thread;
-#if HAVE_ALPHATRACK_KERNEL_DRIVER
 	int udev;
-#else
-	usb_dev_handle* udev;
-#endif
 
 #if ALPHATRACK_THREADS
 	pthread_t       thread_read;
 #endif
 	int             last_read_error;
 
-	uint32_t        buttonmask;
+	uint64_t        buttonmask;
 	uint32_t        timeout;
 	uint32_t        inflight;
 	uint32_t        current_track_id;
@@ -206,14 +197,13 @@ private:
         std::bitset<ROWS*COLUMNS> screen_invalid;
 	char screen_current[ROWS][COLUMNS];
 	char screen_pending[ROWS][COLUMNS];
-	char screen_flash[ROWS][COLUMNS];
 
         std::bitset<LIGHTS> lights_invalid;
         std::bitset<LIGHTS> lights_current;
         std::bitset<LIGHTS> lights_pending;
         std::bitset<LIGHTS> lights_flash;
 
-	int32_t       last_notify;
+	int32_t        last_notify;
 	char           last_notify_msg[COLUMNS+1]; 
 	uint32_t       last_bars;
 	uint32_t       last_beats;
@@ -244,18 +234,6 @@ private:
         void print (int row, int col, const char* text);
 	void print_noretry (int row, int col, const char* text);
 	void notify(const char *msg);
-
-#if HAVE_ALPHATRACK_KERNEL_DRIVER
-	int rtpriority_set(int priority = 3); // we don't need serious rt privs anymore
-#else
-	int rtpriority_set(int priority = 52);
-#endif
-	int rtpriority_unset(int priority = 0);
-
-	// I hate changing the api to do either but until I have clean io class what can you do?
-#if !HAVE_ALPHATRACK_KERNEL_DRIVER
-	int open_core (struct usb_device*);
-#endif
 	static void* _monitor_work (void* arg);
 	void* monitor_work ();
 
@@ -263,8 +241,6 @@ private:
 	int update_state();
 	void invalidate();
 	int flush();
-	// bool isuptodate(); // think on this. It seems futile to update more than 30/sec
-
 	// A screen is a cache of what should be on the lcd
 
 	void screen_init();
@@ -342,10 +318,10 @@ private:
 	void show_bling();
 	void show_notify();
 
-	void datawheel ();
-	void scrub ();
-	void scroll ();
-	void shuttle ();
+	//	void datawheel ();
+	// void scrub ();
+	// void scroll ();
+	// void shuttle ();
 	void config ();
 
 	void next_wheel_mode ();
@@ -359,11 +335,8 @@ private:
 	void step_pan_right ();
 	void step_pan_left ();
 
-
-	void button_event_battery_press (bool shifted);
-	void button_event_battery_release (bool shifted);
-	void button_event_backlight_press (bool shifted);
-	void button_event_backlight_release (bool shifted);
+	//	void button_event_backlight_press (bool shifted);
+	// void button_event_backlight_release (bool shifted);
 	void button_event_trackleft_press (bool shifted);
 	void button_event_trackleft_release (bool shifted);
 	void button_event_trackright_press (bool shifted);
@@ -403,8 +376,6 @@ private:
 	void button_event_footswitch_press(bool shifted);
 	void button_event_footswitch_release (bool shifted);
 
-	// new api - still thinking about it
-	void button_event_mute (bool pressed, bool shifted);
 };
 
 

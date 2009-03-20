@@ -1,6 +1,6 @@
 /*
  *   Copyright (C) 2006 Paul Davis 
- *   Copyright (C) 2007 Michael Taht
+ *   Copyright (C) 2009 David Taht
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -37,35 +37,6 @@ using namespace PBD;
 
 #include "i18n.h"
 #include <pbd/abstract_ui.cc>
-
-void
-AlphatrackControlProtocol::button_event_battery_press (bool shifted)
-{
-}
-
-void
-AlphatrackControlProtocol::button_event_battery_release (bool shifted)
-{
-}
-
-void
-AlphatrackControlProtocol::button_event_backlight_press (bool shifted)
-{
-}
-
-void
-AlphatrackControlProtocol::button_event_backlight_release (bool shifted)
-{
-#if DEBUG_ALPHATRACK
-	printf("backlight released, redrawing (and possibly crashing) display\n");
-#endif
-	if (shifted) {
-		lcd_damage();
-		lcd_clear();
-		last_where += 1; /* force time redisplay */
-		last_track_gain = FLT_MAX;
-	}
-}
 
 void
 AlphatrackControlProtocol::button_event_trackleft_press (bool shifted)
@@ -181,11 +152,7 @@ AlphatrackControlProtocol::button_event_undo_release (bool shifted)
 void
 AlphatrackControlProtocol::button_event_in_press (bool shifted)
 {
-	if (shifted) {
-		toggle_punch_in ();
-	} else {
 		ControlProtocol::ZoomIn (); /* EMIT SIGNAL */
-	}
 }
 
 void
@@ -196,11 +163,7 @@ AlphatrackControlProtocol::button_event_in_release (bool shifted)
 void
 AlphatrackControlProtocol::button_event_out_press (bool shifted)
 {
-	if (shifted) {
-		toggle_punch_out ();
-	} else {
 		ControlProtocol::ZoomOut (); /* EMIT SIGNAL */
-	}
 }
 
 void
@@ -221,11 +184,7 @@ AlphatrackControlProtocol::button_event_punch_release (bool shifted)
 void
 AlphatrackControlProtocol::button_event_loop_press (bool shifted)
 {
-	if (shifted) {
-		next_wheel_shift_mode ();
-	} else {
 		loop_toggle ();
-	}
 }
 
 void
@@ -247,9 +206,6 @@ void
 AlphatrackControlProtocol::button_event_prev_release (bool shifted)
 {
 }
-
-// Note - add_marker should adhere to the snap to setting
-// maybe session->audible_frame does that
 
 void
 AlphatrackControlProtocol::button_event_add_press (bool shifted)
@@ -371,20 +327,6 @@ AlphatrackControlProtocol::button_event_footswitch_release (bool shifted)
 	}
 }
 
-// Possible new api example
-// tries harder to do the right thing if we somehow missed a button down event
-// which currently happens... a lot.
-
-void button_event_mute (bool pressed, bool shifted)
-{
-	static int was_pressed = 0;
-	if((!pressed && !was_pressed) || pressed) { 
-		was_pressed = 1;
-	} 
-
-	was_pressed = 0;
-}
-
 #define ALPHATRACK_BUTTON_HANDLER(callback, button_arg) if (button_changes & button_arg) { \
 		if (buttonmask & button_arg) {				\
 			callback##_press (buttonmask&ButtonShift); } else { callback##_release (buttonmask&ButtonShift); } }
@@ -443,30 +385,29 @@ AlphatrackControlProtocol::process (uint8_t* buf)
 	button_changes = (this_button_mask ^ buttonmask);
 	buttonmask = this_button_mask;
 
-	if (_datawheel) {
-		datawheel ();
-	}
+	// FIXME - I had to handle shift around here somewhere before
+	//	if (_datawheel) {
+	//	datawheel ();
+	// }
 
 	// SHIFT + STOP + PLAY for bling mode?
 	// if (button_changes & ButtonPlay & ButtonStop) {
 	// bling_mode_toggle();  
 	// } or something like that
 
-	ALPHATRACK_BUTTON_HANDLER(button_event_battery,ButtonBattery);
-	ALPHATRACK_BUTTON_HANDLER(button_event_backlight,ButtonBacklight);
 	ALPHATRACK_BUTTON_HANDLER(button_event_trackleft,ButtonTrackLeft);
 	ALPHATRACK_BUTTON_HANDLER(button_event_trackright,ButtonTrackRight);
 	ALPHATRACK_BUTTON_HANDLER(button_event_trackrec,ButtonTrackRec);
 	ALPHATRACK_BUTTON_HANDLER(button_event_trackmute,ButtonTrackMute);
 	ALPHATRACK_BUTTON_HANDLER(button_event_tracksolo,ButtonTrackSolo);
-	ALPHATRACK_BUTTON_HANDLER(button_event_undo,ButtonUndo);
-	ALPHATRACK_BUTTON_HANDLER(button_event_in,ButtonIn);
-	ALPHATRACK_BUTTON_HANDLER(button_event_out,ButtonOut);
+	// ALPHATRACK_BUTTON_HANDLER(button_event_undo,ButtonUndo);
+	// ALPHATRACK_BUTTON_HANDLER(button_event_in,ButtonIn);
+	// ALPHATRACK_BUTTON_HANDLER(button_event_out,ButtonOut);
 	ALPHATRACK_BUTTON_HANDLER(button_event_punch,ButtonPunch);
 	ALPHATRACK_BUTTON_HANDLER(button_event_loop,ButtonLoop);
-	ALPHATRACK_BUTTON_HANDLER(button_event_prev,ButtonPrev);
-	ALPHATRACK_BUTTON_HANDLER(button_event_add,ButtonAdd);
-	ALPHATRACK_BUTTON_HANDLER(button_event_next,ButtonNext);
+	// ALPHATRACK_BUTTON_HANDLER(button_event_prev,ButtonPrev);
+	// ALPHATRACK_BUTTON_HANDLER(button_event_add,ButtonAdd);
+	// ALPHATRACK_BUTTON_HANDLER(button_event_next,ButtonNext);
 	ALPHATRACK_BUTTON_HANDLER(button_event_rewind,ButtonRewind);
 	ALPHATRACK_BUTTON_HANDLER(button_event_fastforward,ButtonFastForward);
 	ALPHATRACK_BUTTON_HANDLER(button_event_stop,ButtonStop);
@@ -489,11 +430,11 @@ void AlphatrackControlProtocol::show_bling() {
 
 void AlphatrackControlProtocol::notify(const char *msg) {
 	last_notify=100;
-	if(strlen(msg) < 21) {
+	if(strlen(msg) < COLUMNS+1) {
 		strcpy(last_notify_msg,msg);
 	} else {
-		strncpy(last_notify_msg,msg,16);
-		last_notify_msg[16] = '\n';
+		strncpy(last_notify_msg,msg,COLUMNS);
+		last_notify_msg[COLUMNS] = '\n';
 	}
 }
 
@@ -564,8 +505,7 @@ int AlphatrackControlProtocol::lights_show_normal()
 
 	/* Global settings */
 
-	lights_pending[LightLoop]        = session->get_play_loop(); 
-	lights_pending[LightPunch]       = Config->get_punch_in() || Config->get_punch_out();
+	lights_pending[LightLoop]        = session->get_play_loop() || Config->get_punch_in() || Config->get_punch_out();
 	lights_pending[LightRecord]      = session->get_record_enabled();
 	lights_pending[LightAnysolo]     = session->soloing();
 
@@ -787,40 +727,6 @@ AlphatrackControlProtocol::~AlphatrackControlProtocol ()
 	set_active (false);
 }
 
-int AlphatrackControlProtocol::rtpriority_set(int priority) 
-{
-	struct sched_param rtparam;
-	int err;
-	char *a = (char*) alloca(4096*2); a[0] = 'a'; a[4096] = 'b';
-	memset (&rtparam, 0, sizeof (rtparam));
-	rtparam.sched_priority = priority; /* XXX should be relative to audio (JACK) thread */
-	// Note - try SCHED_RR with a low limit 
-	// - we don't care if we can't write everything this ms
-	// and it will help if we lose the device
-	if ((err = pthread_setschedparam (pthread_self(), SCHED_FIFO, &rtparam)) != 0) {
-		PBD::info << string_compose (_("%1: thread not running with realtime scheduling (%2)"), name(), strerror (errno)) << endmsg;
-		return 1;
-	} 
-	return 0;
-}
-
-// Running with realtime privs is bad when you have problems
-
-int AlphatrackControlProtocol::rtpriority_unset(int priority) 
-{
-	struct sched_param rtparam;
-	int err;
-	memset (&rtparam, 0, sizeof (rtparam));
-	rtparam.sched_priority = priority; 	
-	if ((err = pthread_setschedparam (pthread_self(), SCHED_FIFO, &rtparam)) != 0) {
-		PBD::info << string_compose (_("%1: can't stop realtime scheduling (%2)"), name(), strerror (errno)) << endmsg;
-		return 1;
-	} 
-	PBD::info << string_compose (_("%1: realtime scheduling stopped (%2)"), name(), strerror (errno)) << endmsg;
-	return 0;
-}
-
-
 int
 AlphatrackControlProtocol::set_active (bool yn)
 {
@@ -911,11 +817,10 @@ AlphatrackControlProtocol::AlphatrackControlProtocol (Session& s)
 
 }
 
-#if HAVE_ALPHATRACK_KERNEL_DRIVER
 void*
 AlphatrackControlProtocol::monitor_work ()
 {
-	uint8_t buf[8]; //  = { 0,0,0,0,0,0,0,0 };
+	uint8_t buf[12]; //  = { 0,0,0,0,0,0,0,0 };
 	int val = 0, pending = 0;
 	bool first_time = true;
 	uint8_t offline = 0;
@@ -923,7 +828,6 @@ AlphatrackControlProtocol::monitor_work ()
 	PBD::notify_gui_about_thread_creation (pthread_self(), X_("Alphatrack"));
 	pthread_setcancelstate (PTHREAD_CANCEL_ENABLE, 0);
 	pthread_setcanceltype (PTHREAD_CANCEL_ASYNCHRONOUS, 0);
-	rtpriority_set();
 	inflight=0;
 	display_mode = DisplayNormal;
 	struct pollfd readfd;
@@ -989,161 +893,10 @@ AlphatrackControlProtocol::monitor_work ()
 	    if(pending > 0) pending--;
 	  }
 
-	  // if(last_write_error == 0 && (_device_status == STATUS_ONLINE || _device_status == STATUS_OK)) { 
-	    //   update_state ();
-	    //   if(pending == 0) {
-	    // 	printf("Flushing\n");
-	    // 	pending = flush(); 
-	    // 	printf("Flushed\n");
-	    //   } else {
-	    // 	if(inflight > 0) {
-	    // 	  pending = --inflight; // we just did a whole bunch of writes so wait
-	    // 	} else {
-	    // 	  pending = 0;
-	    // 	}
-	    //   }
-	    // }
-	    // printf("couldn't write for some reason in control structures\n");
 	}
 	return (void*) 0;
 }
 			
-
-#else
-void*
-AlphatrackControlProtocol::monitor_work ()
-{
-	uint8_t buf[8]; //  = { 0,0,0,0,0,0,0,0 };
-	int val = 0, pending = 0;
-	bool first_time = true;
-	uint8_t offline = 0;
-
-	PBD::notify_gui_about_thread_creation (pthread_self(), X_("Alphatrack"));
-	pthread_setcancelstate (PTHREAD_CANCEL_ENABLE, 0);
-	pthread_setcanceltype (PTHREAD_CANCEL_ASYNCHRONOUS, 0);
-	rtpriority_set();
-	inflight=0;
-	//int intro = 20;
-
-	// wait for the device to come online
-	invalidate();
-	screen_init();
-	lights_init();
-	update_state();
-	display_mode = DisplayNormal;
-
-	while (true) {
-
-		/* bInterval for this beastie is 10ms */
-
-		if (_device_status == STATUS_OFFLINE) {
-			first_time = true; offline++; 
-#if ALPHATRACK_DEBUG > 3
-			if(offline == 1) { 
-				cerr << "Transport has gone offline\n";
-			}
-#endif
-		} else { 
-			offline = 0; // hate writing this
-		}
-		unsigned int s = (last_write_error == 0) | ((last_read_error == 0) << 1);
-		switch (s) {
-		case 0: val = read(buf,DEFAULT_USB_TIMEOUT); break;
-		case 1: val = read(buf,DEFAULT_USB_TIMEOUT); break;
-		case 2: val = read(buf,DEFAULT_USB_TIMEOUT); break;
-		case 3: val = read(buf,DEFAULT_USB_TIMEOUT*2); break; // Hoo, boy, we're in trouble
-		default: break; // not reached
-		}
-	
-#if DEBUG_ALPHATRACK_BITS > 9
-		if(_device_status != STATUS_OFFLINE && _device_status != STATUS_ONLINE && _device_status != STATUS_OK) {
-			printf("The device has more status bits than off or online: %d\n",_device_status);
-		}
-#endif
-
-#if DEBUG_ALPHATRACK_BITS > 99
-		if (val != 8) {
-			printf("val = %d errno = %d\n",val,errno);
-			buf[0] = buf[1] = buf[2] = buf[3] = 
-				buf[4] = buf[5] = buf[6] = buf[7] = 
-				buf[8] = 0;
-		}
-#endif
-
-		if(val == 8) {
-			last_write_error = 0;
-			process (buf);
-		}
-
-#if DEBUG_ALPHATRACK > 9
-		if(inflight > 1) printf("Inflight: %d\n", inflight);
-#endif
-
-		if (_device_status == STATUS_ONLINE) {
-			if (first_time) {
-				invalidate();
-				lcd_clear ();
-				lights_off ();
-				first_time = false;
-				last_write_error = 0;
-				offline = 0;
-				pending = 3; // Give some time for the device to recover
-			}
-#if DEBUG_ALPHATRACK_BITS > 10
-			// Perhaps an online message indicates something
-
-			if(_device_status != buf[1]) { 
-				printf("WTF- val: %d, device status != buf! %d != %d \n",val,_device_status,buf[1]); _device_status = buf[1]; 
-			}
-#endif
-    
-		}
-    
-#if DEBUG_ALPHATRACK_BITS > 10
-
-		if(val == 8) {
-
-			if(_device_status == STATUS_ONLINE) {
-				printf("ONLINE   : %02x %02x %02x %02x %02x %02x %02x %02x\n", 
-				       buf[0],buf[1],buf[2], buf[3], buf[4], buf[5],buf[6],buf[7]); 
-			}
-			if(_device_status == STATUS_OFFLINE) {
-				printf("OFFLINE  : %02x %02x %02x %02x %02x %02x %02x %02x\n", 
-				       buf[0],buf[1],buf[2], buf[3], buf[4], buf[5],buf[6],buf[7]); 
-			}
- 	
-			if(_device_status == STATUS_OK) {
-				printf("OK       : %02x %02x %02x %02x %02x %02x %02x %02x\n", 
-				       buf[0],buf[1],buf[2], buf[3], buf[4], buf[5],buf[6],buf[7]); 
-			}
-      
-		}
-    
-#endif
-    
-		/* update whatever needs updating */
-		if(last_write_error == 0 && (_device_status == STATUS_ONLINE || _device_status == STATUS_OK)) { 
-			update_state ();
-      
-			/* still struggling with a good means of exerting flow control without having to create threads */
-			// pending = flush();
-      
-			if(pending == 0) {
-				pending = flush(); 
-			} else {
-				if(inflight > 0) {
-					pending = --inflight; // we just did a whole bunch of writes so wait
-				} else {
-					pending = 0;
-				}
-			}
-		}
-		// pending = 0;
-	} 
-	return (void*) 0;
-}
-#endif
-
 
 int
 AlphatrackControlProtocol::flush ()
@@ -1214,8 +967,6 @@ AlphatrackControlProtocol::lights_flush ()
 	return light_state.count();
 }
 
-
-#if HAVE_ALPHATRACK_KERNEL_DRIVER
 
 bool
 AlphatrackControlProtocol::probe ()
@@ -1346,198 +1097,8 @@ AlphatrackControlProtocol::write (uint8_t* cmd, uint32_t timeout_override)
 
 }	
 
-#endif
-
-#if !HAVE_ALPHATRACK_KERNEL_DRIVER
-
-bool
-AlphatrackControlProtocol::probe ()
-{
-	struct usb_bus *bus;
-	struct usb_device *dev;
-
-	usb_init();
-	usb_find_busses();
-	usb_find_devices();
-
-	for (bus = usb_busses; bus; bus = bus->next) {
-
-		for(dev = bus->devices; dev; dev = dev->next) {
-			if (dev->descriptor.idVendor == VENDORID && dev->descriptor.idProduct == PRODUCTID) {
-				return true; 
-			}
-		}
-	}
-
-	return false;
-}
-
-int
-AlphatrackControlProtocol::open ()
-{
-	struct usb_bus *bus;
-	struct usb_device *dev;
-
-	usb_init();
-	usb_find_busses();
-	usb_find_devices();
-
-	for (bus = usb_busses; bus; bus = bus->next) {
-
-		for(dev = bus->devices; dev; dev = dev->next) {
-			if (dev->descriptor.idVendor != VENDORID)
-				continue;
-			if (dev->descriptor.idProduct != PRODUCTID)
-				continue;
-			return open_core (dev);
-		}
-	}
-
-	cerr << _("Alphatrack: no device detected") << endmsg;
-	return -1;
-}
-
-int
-AlphatrackControlProtocol::open_core (struct usb_device* dev)
-{
-	if (!(udev = usb_open (dev))) {
-		cerr << _("Alphatrack: cannot open USB transport") << endmsg;
-		return -1;
-	}
-	 
-	if (usb_claim_interface (udev, 0) < 0) {
-		cerr << _("Alphatrack: cannot claim USB interface") << endmsg;
-		usb_close (udev);
-		udev = 0;
-		return -1;
-	}
-
-	if (usb_set_configuration (udev, 1) < 0) {
-		cerr << _("Alphatrack: cannot configure USB interface") << endmsg;
-	}
-
-	return 0;
-}
-
-int
-AlphatrackControlProtocol::close ()
-{
-	int ret = 0;
-
-	if (udev == 0) {
-		return 0;
-	}
-
-	if (usb_release_interface (udev, 0) < 0) {
-		cerr << _("Alphatrack: cannot release interface") << endmsg;
-		ret = -1;
-	}
-
-	if (usb_close (udev)) {
-		cerr << _("Alphatrack: cannot close device") << endmsg;
-		udev = 0;
-		ret = 0;
-	}
-
-	return ret;
-}
-
-int AlphatrackControlProtocol::read(uint8_t *buf, uint32_t timeout_override) 
-{
-	last_read_error = usb_interrupt_read (udev, READ_ENDPOINT, (char *) buf, 8, timeout_override);
-	switch(last_read_error) {
-	case -ENOENT:
-	case -ENXIO:
-	case -ECONNRESET:
-	case -ESHUTDOWN: 
-	case -ENODEV: 
-		cerr << "Alphatrack disconnected, errno: " << last_read_error;
-		set_active(false);
-	case -ETIMEDOUT: // This is normal
-		break;
-	default: 
-#if DEBUG_ALPHATRACK
-		cerr << "Got an unknown error on read:" << last_read_error "\n";
-#endif
-		break;
-	}
-
-	return last_read_error;
-} 
 
 	
-int
-AlphatrackControlProtocol::write_noretry (uint8_t* cmd, uint32_t timeout_override)
-{
-	int val;
-	if(inflight > MAX_ALPHATRACK_INFLIGHT) { return (-1); }
-	val = usb_interrupt_write (udev, WRITE_ENDPOINT, (char*) cmd, 8, timeout_override ? timeout_override : timeout);
-
-	if (val < 0 && val !=8) {
-#if DEBUG_ALPHATRACK
-		printf("usb_interrupt_write failed: %d\n", val);
-#endif
-		last_write_error = val;
-		switch(last_write_error) {
-		case -ENOENT:
-		case -ENXIO:
-		case -ECONNRESET:
-		case -ESHUTDOWN: 
-		case -ENODEV: 
-			cerr << "Alphatrack disconnected, errno: " << last_write_error;
-			set_active(false);
-		case -ETIMEDOUT: // This is normal
-			break;
-		default: 
-#if DEBUG_ALPHATRACK
-			cerr << "Got an unknown error on read:" << last_write_error "\n";
-#endif
-			break;
-		}
-		return val;
-	}
-
-	last_write_error = 0;
-	++inflight;
-
-	return 0;
-
-}	
-
-int
-AlphatrackControlProtocol::write (uint8_t* cmd, uint32_t timeout_override)
-{
-#if MAX_RETRY > 1
-	int val;
-	int retry = 0;
-	if(inflight > MAX_ALPHATRACK_INFLIGHT) { return (-1); }
-	
-	while((val = usb_interrupt_write (udev, WRITE_ENDPOINT, (char*) cmd, 8, timeout_override ? timeout_override : timeout))!=8 && retry++ < MAX_RETRY) {
-		printf("usb_interrupt_write failed, retrying: %d\n", val);
-	}
-
-	if (retry == MAX_RETRY) {
-		printf("Too many retries on a alphatrack write, aborting\n");
-	}
-
-	if (val < 0) {
-		printf("usb_interrupt_write failed: %d\n", val);
-		return val;
-	}
-	if (val != 8) {
-		printf("usb_interrupt_write failed: %d\n", val);
-		return -1;
-	}
-	++inflight;
-	return 0;
-#else
-	return (write_noretry(cmd,timeout_override));
-#endif
-
-}	
-
-#endif
-
 bool AlphatrackControlProtocol::lcd_damage() 
 {
 	screen_invalidate();
@@ -1806,7 +1367,7 @@ AlphatrackControlProtocol::step_pan_left ()
 void
 AlphatrackControlProtocol::screen_clear ()
 {
-	const char *blank = "                    ";
+	const char *blank = "               ";
 	print(0,0,blank); 
 	print(1,0,blank);
 }
@@ -1818,7 +1379,6 @@ void AlphatrackControlProtocol::screen_invalidate ()
 		for(int col = 0; col < COLUMNS; col++) {
 			screen_current[row][col] = 0x7f;
 			screen_pending[row][col] = ' ';
-			screen_flash[row][col] = ' ';
 		}
 	}
 }
@@ -1844,7 +1404,7 @@ AlphatrackControlProtocol::screen_flush ()
 
 	std::bitset<ROWS*COLUMNS> mask(CELL_BITS);
 	std::bitset<ROWS*COLUMNS> imask(CELL_BITS);
-	for(cell = 0; cell < 10; cell++) {
+	for(cell = 0; cell < ROWS*COLUMNS/4; cell++) {
 		mask = imask << (cell*4);
 		if((screen_invalid & mask).any()) {
 			/* something in this cell is different, so dump the cell to the device. */
@@ -1951,26 +1511,7 @@ void AlphatrackControlProtocol::show_mini_meter()
 	float speed = fabsf(session->transport_speed());
 	char buf[meter_buf_size];
 
-	if (speed == 1.0)  { 
-		meter_size = 32; 
-	}
-  
-	if (speed == 0.0) { 
-		meter_size = 20;  // not actually reached
-	}
-  
-	if (speed > 0.0 && (speed < 1.0)) { 
-		meter_size = 20; // may shrink more one day
-	}
-
-	if (speed > 1.0 && (speed < 2.0)) { 
-		meter_size = 20;
-	}
-  
-	if (speed >= 2.0) {
-		meter_size = 24; 
-	} 
-
+	meter_size = COLUMNS/2;
 
 	// you only seem to get a route_table[0] == 0 on moving forward - bug in next_track?
 
@@ -1999,12 +1540,13 @@ void AlphatrackControlProtocol::show_mini_meter()
 	last_meter_fill_l = fill_left;	last_meter_fill_r = fill_right;
 	
 	// give some feedback when overdriving - override yellow and red lights
+	// I really don't think I want to use the scaled values here.
 
 	if (fraction_l > 0.96 || fraction_r > 0.96) {
 		light_on (LightLoop);
 	}
 
-	if (fraction_l == 1.0 || fraction_r == 1.0) {
+	if (fraction_l > 1.0 || fraction_r > 1.0) {
 		light_on (LightTrackrec);
 	}
 	
@@ -2056,12 +1598,12 @@ AlphatrackControlProtocol::show_meter ()
 	/* Someday add a peak bar*/
 
 	/* we draw using a choice of a sort of double colon-like character ("::") or a single, left-aligned ":".
-	   the screen is 20 chars wide, so we can display 40 different levels. compute the level,
+	   the screen is 16 chars wide, so we can display 32 different levels. compute the level,
 	   then figure out how many "::" to fill. if the answer is odd, make the last one a ":"
 	*/
 
 	uint32_t fill  = (uint32_t) floor (fraction * 40);
-	char buf[21];
+	char buf[COLUMNS+1];
 	uint32_t i;
 
 	if (fill == last_meter_fill) {
@@ -2092,20 +1634,20 @@ AlphatrackControlProtocol::show_meter ()
 	
 	/* add a possible half-step */
 
-	if (i < 20 && add_single_level) {
+	if (i < COLUMNS*2 && add_single_level) {
 		buf[i] = 0x03; /* alphatrack special code for 2 left quadrant LCD block */
 		++i;
 	}
 
 	/* fill rest with space */
 
-	for (; i < 20; ++i) {
+	for (; i < COLUMNS; ++i) {
 		buf[i] = ' ';
 	}
 
 	/* print() requires this */
 
-	buf[20] = '\0';
+	buf[COLUMNS] = '\0';
 
 	print (0, 0, buf);
 	print (1, 0, buf);
@@ -2115,7 +1657,7 @@ void
 AlphatrackControlProtocol::show_bbt (nframes_t where)
 { 
 	if (where != last_where) {
-		char buf[16];
+		char buf[COLUMNS];
 		BBT_Time bbt;
 
 		// When recording or playing back < 1.0 speed do 1 or 2
@@ -2333,162 +1875,161 @@ BaseUI::RequestType LEDChange = BaseUI::new_request_type ();
 BaseUI::RequestType Print = BaseUI::new_request_type ();
 BaseUI::RequestType SetCurrentTrack = BaseUI::new_request_type ();
 
+// void
+// AlphatrackControlProtocol::datawheel ()
+// {
+// 	if ((buttonmask & ButtonTrackRight) || (buttonmask & ButtonTrackLeft)) {
 
-void
-AlphatrackControlProtocol::datawheel ()
-{
-	if ((buttonmask & ButtonTrackRight) || (buttonmask & ButtonTrackLeft)) {
+// 		/* track scrolling */
+		
+// 		if (_datawheel < WheelDirectionThreshold) {
+// 			next_track ();
+// 		} else {
+// 			prev_track ();
+// 		}
 
-		/* track scrolling */
+// 		timerclear (&last_wheel_motion);
 		
-		if (_datawheel < WheelDirectionThreshold) {
-			next_track ();
-		} else {
-			prev_track ();
-		}
+// 	} else if ((buttonmask & ButtonPrev) || (buttonmask & ButtonNext)) {
 
-		timerclear (&last_wheel_motion);
+// 		if (_datawheel < WheelDirectionThreshold) {
+// 			next_marker ();
+// 		} else {
+// 			prev_marker ();
+// 		}
 		
-	} else if ((buttonmask & ButtonPrev) || (buttonmask & ButtonNext)) {
-
-		if (_datawheel < WheelDirectionThreshold) {
-			next_marker ();
-		} else {
-			prev_marker ();
-		}
+// 		timerclear (&last_wheel_motion);
 		
-		timerclear (&last_wheel_motion);
+// 	} else if (buttonmask & ButtonShift) {
 		
-	} else if (buttonmask & ButtonShift) {
+// 		/* parameter control */
 		
-		/* parameter control */
-		
-		if (route_table[0]) {
-			switch (wheel_shift_mode) {
-			case WheelShiftGain:
-				if (_datawheel < WheelDirectionThreshold) {
-					step_gain_up ();
-				} else {
-					step_gain_down ();
-				}
-				break;
-			case WheelShiftPan:
-				if (_datawheel < WheelDirectionThreshold) {
-					step_pan_right ();
-				} else {
-					step_pan_left ();
-				}
-				break;
+// 		if (route_table[0]) {
+// 			switch (wheel_shift_mode) {
+// 			case WheelShiftGain:
+// 				if (_datawheel < WheelDirectionThreshold) {
+// 					step_gain_up ();
+// 				} else {
+// 					step_gain_down ();
+// 				}
+// 				break;
+// 			case WheelShiftPan:
+// 				if (_datawheel < WheelDirectionThreshold) {
+// 					step_pan_right ();
+// 				} else {
+// 					step_pan_left ();
+// 				}
+// 				break;
 				
-			case WheelShiftMarker:
-				break;
+// 			case WheelShiftMarker:
+// 				break;
 				
-			case WheelShiftMaster:
-				break;
+// 			case WheelShiftMaster:
+// 				break;
 				
-			}
-		}
+// 			}
+// 		}
 		
-		timerclear (&last_wheel_motion);
+// 		timerclear (&last_wheel_motion);
 		
-	} else {
+// 	} else {
 		
-		switch (wheel_mode) {
-		case WheelTimeline:
-			scroll ();
-			break;
+// 		switch (wheel_mode) {
+// 		case WheelTimeline:
+// 			scroll ();
+// 			break;
 			
-		case WheelScrub:
-			scrub ();
-			break;
+// 		case WheelScrub:
+// 			scrub ();
+// 			break;
 			
-		case WheelShuttle:
-			shuttle ();
-			break;
-		}
-	}
-}
+// 		case WheelShuttle:
+// 			shuttle ();
+// 			break;
+// 		}
+// 	}
+// }
 
-void
-AlphatrackControlProtocol::scroll ()
-{
-	float m = 1.0;
-	if (_datawheel < WheelDirectionThreshold) {
-		m = 1.0;
-	} else {
-		m = -1.0;
-	}
-	switch(wheel_increment) {
-	case WheelIncrScreen: ScrollTimeline (0.2*m); break;
-	case WheelIncrSlave:
-	case WheelIncrSample:
-	case WheelIncrBeat:
-	case WheelIncrBar:
-	case WheelIncrSecond:
-	case WheelIncrMinute:
-	default: break; // other modes unimplemented as yet
-	}
-}
+// void
+// AlphatrackControlProtocol::scroll ()
+// {
+// 	float m = 1.0;
+// 	if (_datawheel < WheelDirectionThreshold) {
+// 		m = 1.0;
+// 	} else {
+// 		m = -1.0;
+// 	}
+// 	switch(wheel_increment) {
+// 	case WheelIncrScreen: ScrollTimeline (0.2*m); break;
+// 	case WheelIncrSlave:
+// 	case WheelIncrSample:
+// 	case WheelIncrBeat:
+// 	case WheelIncrBar:
+// 	case WheelIncrSecond:
+// 	case WheelIncrMinute:
+// 	default: break; // other modes unimplemented as yet
+// 	}
+// }
 
-void
-AlphatrackControlProtocol::scrub ()
-{
-	float speed;
-	struct timeval now;
-	struct timeval delta;
-	int dir;
+// void
+// AlphatrackControlProtocol::scrub ()
+// {
+// 	float speed;
+// 	struct timeval now;
+// 	struct timeval delta;
+// 	int dir;
 	
-	gettimeofday (&now, 0);
+// 	gettimeofday (&now, 0);
 	
-	if (_datawheel < WheelDirectionThreshold) {
-		dir = 1;
-	} else {
-		dir = -1;
-	}
+// 	if (_datawheel < WheelDirectionThreshold) {
+// 		dir = 1;
+// 	} else {
+// 		dir = -1;
+// 	}
 	
-	if (dir != last_wheel_dir) {
-		/* changed direction, start over */
-		speed = 0.1f;
-	} else {
-		if (timerisset (&last_wheel_motion)) {
+// 	if (dir != last_wheel_dir) {
+// 		/* changed direction, start over */
+// 		speed = 0.1f;
+// 	} else {
+// 		if (timerisset (&last_wheel_motion)) {
 
-			timersub (&now, &last_wheel_motion, &delta);
+// 			timersub (&now, &last_wheel_motion, &delta);
 			
-			/* 10 clicks per second => speed == 1.0 */
+// 			/* 10 clicks per second => speed == 1.0 */
 			
-			speed = 100000.0f / (delta.tv_sec * 1000000 + delta.tv_usec);
+// 			speed = 100000.0f / (delta.tv_sec * 1000000 + delta.tv_usec);
 			
-		} else {
+// 		} else {
 			
-			/* start at half-speed and see where we go from there */
+// 			/* start at half-speed and see where we go from there */
 			
-			speed = 0.5f;
-		}
-	}
+// 			speed = 0.5f;
+// 		}
+// 	}
 	
-	last_wheel_motion = now;
-	last_wheel_dir = dir;
+// 	last_wheel_motion = now;
+// 	last_wheel_dir = dir;
 	
-	set_transport_speed (speed * dir);
-}
+// 	set_transport_speed (speed * dir);
+// }
 
-void
-AlphatrackControlProtocol::shuttle ()
-{
-	if (_datawheel < WheelDirectionThreshold) {
-		if (session->transport_speed() < 0) {
-			session->request_transport_speed (1.0);
-		} else {
-			session->request_transport_speed (session->transport_speed() + 0.1);
-		}
-	} else {
-		if (session->transport_speed() > 0) {
-			session->request_transport_speed (-1.0);
-		} else {
-			session->request_transport_speed (session->transport_speed() - 0.1);
-		}
-	}
-}
+// void
+// AlphatrackControlProtocol::shuttle ()
+// {
+// 	if (_datawheel < WheelDirectionThreshold) {
+// 		if (session->transport_speed() < 0) {
+// 			session->request_transport_speed (1.0);
+// 		} else {
+// 			session->request_transport_speed (session->transport_speed() + 0.1);
+// 		}
+// 	} else {
+// 		if (session->transport_speed() > 0) {
+// 			session->request_transport_speed (-1.0);
+// 		} else {
+// 			session->request_transport_speed (session->transport_speed() - 0.1);
+// 		}
+// 	}
+// }
 
 void
 AlphatrackControlProtocol::next_wheel_shift_mode ()
@@ -2532,10 +2073,6 @@ void
 AlphatrackControlProtocol::show_wheel_mode ()
 {
 	string text;
-
-	// if(session->transport_speed() != 0) {
-	//    if session-transport_speed() < 1.0) show_big_bar/beat
-	//    if ? greater. dont
 
 	if(session->transport_speed() != 0) {
 		show_mini_meter(); 
