@@ -202,7 +202,7 @@ TranzportControlProtocol::show_meter ()
 	}
 
 	float level_l = route_get_peak_input_power (0, 0);
-	float fraction_l = log_meter (level);
+	float fraction_l = log_meter (level_l);
 	float level_r = 0.0;
 	float fraction_r = 0.0;
 
@@ -213,7 +213,7 @@ TranzportControlProtocol::show_meter ()
 	   then figure out how many "::" to fill. if the answer is odd, make the last one a ":"
 	*/
 
-	uint32_t fill  = (uint32_t) floor (fraction * COLUMNS*2);
+	uint32_t fill  = (uint32_t) floor (fraction_l * COLUMNS*2);
 	char buf[COLUMNS+1];
 	uint32_t i;
 
