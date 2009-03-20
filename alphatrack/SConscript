@@ -48,8 +48,7 @@ alphatrack.Merge ([
     libraries['midi++2'],
     libraries['xml'],
     libraries['glib2'],
-    libraries['glibmm2'],
-    libraries['sndfile-ardour']
+    libraries['glibmm2']
     ])
 
 libardour_alphatrack = alphatrack.SharedLibrary('ardour_alphatrack', alphatrack_files)
