@@ -118,31 +118,10 @@ void TranzportControlProtocol::show_mini_meter()
 	const int meter_buf_size = 41; 
 	static uint32_t last_meter_fill_l = 0;
 	static uint32_t last_meter_fill_r = 0;
-	uint32_t meter_size;
+	uint32_t meter_size = COLUMNS;
 
 	float speed = fabsf(session->transport_speed());
 	char buf[meter_buf_size];
-
-	if (speed == 1.0)  { 
-		// meter_size = 32; 
-		meter_size = 20; 
-	}
-  
-	if (speed == 0.0) { 
-		meter_size = 20;  // not actually reached
-	}
-  
-	if (speed > 0.0 && (speed < 1.0)) { 
-		meter_size = 20; // may shrink more one day
-	}
-
-	if (speed > 1.0 && (speed < 2.0)) { 
-		meter_size = 20;
-	}
-  
-	if (speed >= 2.0) {
-		meter_size = 20; 
-	} 
 
 	// you only seem to get a route_table[0] == 0 on moving forward - bug in next_track?
 
@@ -172,11 +151,11 @@ void TranzportControlProtocol::show_mini_meter()
 	
 	// give some feedback when overdriving - override yellow and red lights
 
-	if (fraction_l > 0.94 || fraction_r > 0.94) {
+	if (level_l > 0.94 || level_r > 0.94) {
 		light_on (LightLoop);
 	}
 
-	if (fraction_l > 0.98 || fraction_r > 0.98) {
+	if (level_l > 0.98 || level_r > 0.98) {
 		light_on (LightTrackrec);
 	}
 	
@@ -222,8 +201,10 @@ TranzportControlProtocol::show_meter ()
 		return;
 	}
 
-	float level = route_get_peak_input_power (0, 0);
-	float fraction = log_meter (level);
+	float level_l = route_get_peak_input_power (0, 0);
+	float fraction_l = log_meter (level);
+	float level_r = 0.0;
+	float fraction_r = 0.0;
 
 	/* Someday add a peak bar*/
 
@@ -232,8 +213,8 @@ TranzportControlProtocol::show_meter ()
 	   then figure out how many "::" to fill. if the answer is odd, make the last one a ":"
 	*/
 
-	uint32_t fill  = (uint32_t) floor (fraction * 40);
-	char buf[21];
+	uint32_t fill  = (uint32_t) floor (fraction * COLUMNS*2);
+	char buf[COLUMNS+1];
 	uint32_t i;
 
 	if (fill == last_meter_fill) {
@@ -246,15 +227,13 @@ TranzportControlProtocol::show_meter ()
 	bool add_single_level = (fill % 2 != 0);
 	fill /= 2;
 
-	if (fraction > 0.94) {
+	if (level_l > 0.94 || level_r > 0.94) {
 		light_on (LightLoop);
 	}
 
-
-	if (fraction > 0.98 ) {
+	if (level_l > 0.98 || level_r > 0.98) {
 		light_on (LightTrackrec);
 	}
-
 
 	/* add all full steps */
 
@@ -287,7 +266,7 @@ void
 TranzportControlProtocol::show_bbt (nframes64_t where)
 { 
 	if (where != last_where) {
-		char buf[16];
+		char buf[COLUMNS];
 		BBT_Time bbt;
 
 		// When recording or playing back < 1.0 speed do 1 or 2

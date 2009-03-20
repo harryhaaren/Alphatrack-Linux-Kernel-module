@@ -64,14 +64,14 @@ TranzportControlProtocol::screen_flush ()
 
 	std::bitset<ROWS*COLUMNS> mask(CELL_BITS);
 	std::bitset<ROWS*COLUMNS> imask(CELL_BITS);
-	for(cell = 0; cell < 10; cell++) {
+	for(cell = 0; cell < ROWS*COLUMNS/4; cell++) {
 		mask = imask << (cell*4);
 		if((screen_invalid & mask).any()) {
 			/* something in this cell is different, so dump the cell to the device. */
 #if DEBUG_TRANZPORT_SCREEN
 			printf("MASK   : %s\n", mask.to_string().c_str());
 #endif
-			if(cell > 4) { row = 1; } else { row = 0; }
+			if(cell > (COLUMNS/4-1)) { row = 1; } else { row = 0; }
 			col_base = (cell*4)%COLUMNS;
         
 			uint8_t cmd[8]; 

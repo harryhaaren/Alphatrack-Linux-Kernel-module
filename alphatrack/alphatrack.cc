@@ -1411,7 +1411,7 @@ AlphatrackControlProtocol::screen_flush ()
 #if DEBUG_ALPHATRACK_SCREEN
 			printf("MASK   : %s\n", mask.to_string().c_str());
 #endif
-			if(cell > 4) { row = 1; } else { row = 0; }
+			if(cell > (COLUMNS/4-1)) { row = 1; } else { row = 0; }
 			col_base = (cell*4)%COLUMNS;
         
 			uint8_t cmd[8]; 
@@ -1506,12 +1506,11 @@ void AlphatrackControlProtocol::show_mini_meter()
 	const int meter_buf_size = 41; 
 	static uint32_t last_meter_fill_l = 0;
 	static uint32_t last_meter_fill_r = 0;
-	uint32_t meter_size;
+	uint32_t meter_size = COLUMNS;
 
 	float speed = fabsf(session->transport_speed());
 	char buf[meter_buf_size];
 
-	meter_size = COLUMNS/2;
 
 	// you only seem to get a route_table[0] == 0 on moving forward - bug in next_track?
 
@@ -1542,11 +1541,11 @@ void AlphatrackControlProtocol::show_mini_meter()
 	// give some feedback when overdriving - override yellow and red lights
 	// I really don't think I want to use the scaled values here.
 
-	if (fraction_l > 0.96 || fraction_r > 0.96) {
+	if (level_l > 0.94 || level_r > 0.94) {
 		light_on (LightLoop);
 	}
 
-	if (fraction_l > 1.0 || fraction_r > 1.0) {
+	if (level_l > 0.98 || level_r > 0.98) {
 		light_on (LightTrackrec);
 	}
 	
@@ -1592,8 +1591,11 @@ AlphatrackControlProtocol::show_meter ()
 		return;
 	}
 
-	float level = route_get_peak_input_power (0, 0);
-	float fraction = log_meter (level);
+	float level_l = route_get_peak_input_power (0, 0);
+	float fraction_l = log_meter (level);
+
+	float fraction_r = 0.0;
+	float level_r = 0.0; // FIXME for stereo
 
 	/* Someday add a peak bar*/
 
@@ -1602,7 +1604,7 @@ AlphatrackControlProtocol::show_meter ()
 	   then figure out how many "::" to fill. if the answer is odd, make the last one a ":"
 	*/
 
-	uint32_t fill  = (uint32_t) floor (fraction * 40);
+	uint32_t fill  = (uint32_t) floor (fraction * COLUMNS*2);
 	char buf[COLUMNS+1];
 	uint32_t i;
 
@@ -1616,12 +1618,11 @@ AlphatrackControlProtocol::show_meter ()
 	bool add_single_level = (fill % 2 != 0);
 	fill /= 2;
 
-	if (fraction > 0.96) {
+	if (level_l > 0.94 || level_r > 0.94) {
 		light_on (LightLoop);
 	}
 
-
-	if (fraction == 1.0) {
+	if (level_l > 0.98 || level_r > 0.98) {
 		light_on (LightTrackrec);
 	}
 
