@@ -131,7 +131,7 @@ AlphatrackControlProtocol::button_event_tracksolo_release (bool shifted)
 void
 AlphatrackControlProtocol::button_event_undo_press (bool shifted)
 {
-// undohistory->get_state(1);
+//undohistory->get_state(1);
 //XMLNode&
 //UndoHistory::get_state (uint32_t depth)
 
