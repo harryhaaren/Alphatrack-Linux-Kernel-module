@@ -30,27 +30,40 @@ enum {
 	LIGHT_PUNCH
 };
 
-#define BUTTONMASK_BATTERY     0x00004000
-#define BUTTONMASK_BACKLIGHT   0x00008000
-#define BUTTONMASK_TRACKLEFT   0x04000000
-#define BUTTONMASK_TRACKRIGHT  0x40000000
-#define BUTTONMASK_TRACKREC    0x00040000
-#define BUTTONMASK_TRACKMUTE   0x00400000
-#define BUTTONMASK_TRACKSOLO   0x00000400
-#define BUTTONMASK_UNDO        0x80000000
-#define BUTTONMASK_IN          0x02000000
-#define BUTTONMASK_OUT         0x20000000
-#define BUTTONMASK_PUNCH       0x00800000
-#define BUTTONMASK_LOOP        0x00080000
+
+#define BUTTONMASK_POT_LEFT    0x00000008
+#define BUTTONMASK_POT_MIDDLE  0x00000010
+#define BUTTONMASK_POT_RIGHT   0x00000020
+
+#define BUTTONMASK_PAN         0x00000200
+#define BUTTONMASK_SEND        0x00000800
+#define BUTTONMASK_EQ          0x00004000
+#define BUTTONMASK_PLUGIN      0x00000400
+#define BUTTONMASK_AUTO        0x00000100
+
+#define BUTTONMASK_F1          0x00100000
+#define BUTTONMASK_F2          0x00400000
+#define BUTTONMASK_F3          0x00200000
+#define BUTTONMASK_F4          0x00080000
+
+#define BUTTONMASK_TRACKLEFT   0x80000000
+#define BUTTONMASK_TRACKRIGHT  0x00020000
+#define BUTTONMASK_TRACKREC    0x00001000
+#define BUTTONMASK_TRACKMUTE   0x00040000
+#define BUTTONMASK_TRACKSOLO   0x00800000
+#define BUTTONMASK_LOOP        0x00010000
+#define BUTTONMASK_FLIP        0x40000000
 #define BUTTONMASK_PREV        0x00020000
-#define BUTTONMASK_ADD         0x00200000
 #define BUTTONMASK_NEXT        0x00000200
 #define BUTTONMASK_REWIND      0x01000000
-#define BUTTONMASK_FASTFORWARD 0x10000000
-#define BUTTONMASK_STOP        0x00010000
-#define BUTTONMASK_PLAY        0x00100000
-#define BUTTONMASK_RECORD      0x00000100
-#define BUTTONMASK_SHIFT       0x08000000
+#define BUTTONMASK_FASTFORWARD 0x04000000
+#define BUTTONMASK_STOP        0x10000000
+#define BUTTONMASK_PLAY        0x08000000
+#define BUTTONMASK_RECORD      0x02000000
+#define BUTTONMASK_SHIFT       0x20000000
+
+#define BUTTONMASK_STRIP_SINGLE_TOUCH 0x00000002
+#define BUTTONMASK_STRIP_DOUBLE_TOUCH 0x20000004
 
 #define STATUS_OFFLINE 0xff
 #define STATUS_ONLINE  0x01
@@ -186,43 +199,39 @@ int tranzport_lightoff(tranzport_t *z, uint8_t light, int timeout)
 	return tranzport_write_core(z, &cmd[0], timeout);
 }
 
-int tranzport_read(tranzport_t *z, uint8_t *status, uint32_t *buttons, uint8_t *datawheel, int timeout)
+int tranzport_read(tranzport_t *z, uint8_t *status, uint32_t *buttons, uint8_t *fader, int timeout)
 {
 	uint8_t buf[12];
 	int val;
-  
+	
 	memset(buf, 0xff, 12);
-  
-	val = read(z->udev, buf, 8);
-  
+	
+	val = read(z->udev, buf, 12);
+	
 	if (val < 0) {
 		//printf("errno: %d\n",errno);
 		return val;
 	}
-  else
-  {
-    printf ("tranzport_read: val from read = %i\n", val);
-  }
-  
-  
-	if (val == 8)
-  {
-    printf("val == 8");
-  }
+	else
+	{
+		printf ("tranzport_read: val from read = %i\n", val);
+	}
+	
+	// Alphatrack device seems to use 12 rather than 8 for the tranzport
 	if (val != 12)
 		return -1;
-  
-	printf("read: %02x %02x %02x %02x %02x %02x %02x %02x\n", buf[0], buf[1], buf[2], buf[3], buf[4], buf[5], buf[6], buf[7]);
-  
+	
+	printf("read: %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x\n", buf[0], buf[1], buf[2], buf[3], buf[4], buf[5], buf[6], buf[7], buf[8], buf[9], buf[10], buf[11]);
+	
 	*status = buf[1];
-  
+	
 	*buttons = 0;
 	*buttons |= buf[2] << 24;
 	*buttons |= buf[3] << 16;
 	*buttons |= buf[4] << 8;
 	*buttons |= buf[5];
 
-	*datawheel = buf[6];
+	*fader = buf[6];
 
 	return 0;
 }
@@ -245,7 +254,6 @@ void do_lights(tranzport_t *z, uint32_t buttons)
 	lights_core(z, buttons, BUTTONMASK_TRACKMUTE, LIGHT_TRACKMUTE);
 	lights_core(z, buttons, BUTTONMASK_TRACKSOLO, LIGHT_TRACKSOLO);
 	lights_core(z, buttons, BUTTONMASK_TRACKSOLO, LIGHT_ANYSOLO);
-	lights_core(z, buttons, BUTTONMASK_PUNCH, LIGHT_PUNCH);
 	lights_core(z, buttons, BUTTONMASK_LOOP, LIGHT_LOOP);
 }
 
@@ -255,32 +263,44 @@ void buttons_core(tranzport_t *z, uint32_t buttons, uint32_t buttonmask, char *s
 		printf(" %s", str);
 }
 
-void do_buttons(tranzport_t *z, uint32_t buttons, uint8_t datawheel)
+void do_buttons(tranzport_t *z, uint32_t buttons, uint8_t fader)
 {
 	printf("buttons: %x ", buttons);
-	buttons_core(z, buttons, BUTTONMASK_BATTERY, "battery");
-	buttons_core(z, buttons, BUTTONMASK_BACKLIGHT, "backlight");
+	
+	buttons_core(z, buttons, BUTTONMASK_POT_LEFT, "pot-left");
+	buttons_core(z, buttons, BUTTONMASK_POT_MIDDLE, "pot-middle");
+	buttons_core(z, buttons, BUTTONMASK_POT_RIGHT, "pot-right");
+	
+	buttons_core(z, buttons, BUTTONMASK_PAN, "pan");
+	buttons_core(z, buttons, BUTTONMASK_SEND, "send");
+	buttons_core(z, buttons, BUTTONMASK_EQ, "eq");
+	buttons_core(z, buttons, BUTTONMASK_PLUGIN, "plugin");
+	buttons_core(z, buttons, BUTTONMASK_AUTO, "auto");
+
+	buttons_core(z, buttons, BUTTONMASK_F1, "f1");
+	buttons_core(z, buttons, BUTTONMASK_F2, "f2");
+	buttons_core(z, buttons, BUTTONMASK_F3, "f3");
+	buttons_core(z, buttons, BUTTONMASK_F4, "f4");
+
 	buttons_core(z, buttons, BUTTONMASK_TRACKLEFT, "trackleft");
 	buttons_core(z, buttons, BUTTONMASK_TRACKRIGHT, "trackright");
 	buttons_core(z, buttons, BUTTONMASK_TRACKREC, "trackrec");
 	buttons_core(z, buttons, BUTTONMASK_TRACKMUTE, "trackmute");
 	buttons_core(z, buttons, BUTTONMASK_TRACKSOLO, "tracksolo");
-	buttons_core(z, buttons, BUTTONMASK_UNDO, "undo");
-	buttons_core(z, buttons, BUTTONMASK_IN, "in");
-	buttons_core(z, buttons, BUTTONMASK_OUT, "out");
-	buttons_core(z, buttons, BUTTONMASK_PUNCH, "punch");
 	buttons_core(z, buttons, BUTTONMASK_LOOP, "loop");
-	buttons_core(z, buttons, BUTTONMASK_PREV, "prev");
-	buttons_core(z, buttons, BUTTONMASK_ADD, "add");
-	buttons_core(z, buttons, BUTTONMASK_NEXT, "next");
+	buttons_core(z, buttons, BUTTONMASK_FLIP, "flip");
 	buttons_core(z, buttons, BUTTONMASK_REWIND, "rewind");
 	buttons_core(z, buttons, BUTTONMASK_FASTFORWARD, "fastforward");
 	buttons_core(z, buttons, BUTTONMASK_STOP, "stop");
 	buttons_core(z, buttons, BUTTONMASK_PLAY, "play");
 	buttons_core(z, buttons, BUTTONMASK_RECORD, "record");
 	buttons_core(z, buttons, BUTTONMASK_SHIFT, "shift");
-	if (datawheel)
-		printf(" datawheel=%02x", datawheel);
+	
+	buttons_core(z, buttons, BUTTONMASK_STRIP_SINGLE_TOUCH, "strip-single");
+	buttons_core(z, buttons, BUTTONMASK_STRIP_DOUBLE_TOUCH, "strip-double");
+	
+	if (fader)
+		printf(" Fader=%02x", fader);
 	printf("\n");
 }
 
@@ -326,29 +346,29 @@ int main()
 	tranzport_t *z;
 	uint8_t status = -1;
 	uint32_t buttons = -1;
-	uint8_t datawheel = -1;
+	uint8_t fader = -1;
 	int val = -1;
 
 	z = open_tranzport();
 
 	//do_lcd(z);
-  
-  lights_on(z);
+	
+	lights_off(z);
 
 	for(;;)
-  {
-    //do_lcd(z);
-    //lights_on(z);
-    //do_lcd2(z);
-    //lights_off(z);
+	{
+		//do_lcd(z);
+		//lights_on(z);
+		//do_lcd2(z);
+		//lights_off(z);
 
-    val = tranzport_read(z, &status, &buttons, &datawheel, 6000);
- 		
-    if ( status == -1 || buttons == -1 || datawheel == -1)
-    {
-      printf("error in tranzport_read(), returning -1");
-    }
-    
+		val = tranzport_read(z, &status, &buttons, &fader, 6000);
+		
+		if ( status == -1 || buttons == -1 || fader == -1)
+		{
+			printf("error in tranzport_read(), returning -1");
+		}
+		
 		if (val < 0)
 			continue;
 
@@ -363,7 +383,7 @@ int main()
 		}
 
 		do_lights(z, buttons);
-		do_buttons(z, buttons, datawheel);
+		do_buttons(z, buttons, fader);
 	}
 
 	close_tranzport(z);
