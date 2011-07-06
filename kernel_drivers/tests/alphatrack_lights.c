@@ -20,15 +20,41 @@
 #define READ_ENDPOINT  0x81
 #define WRITE_ENDPOINT 0x02
 
-enum {
-	LIGHT_RECORD = 0,
-	LIGHT_TRACKREC,
-	LIGHT_TRACKMUTE,
-	LIGHT_TRACKSOLO,
-	LIGHT_ANYSOLO,
-	LIGHT_LOOP,
-	LIGHT_PUNCH
-};
+
+
+
+
+
+
+
+
+#define LIGHT_ANY_SOLO        0x0F
+#define LIGHT_AUTO_WRITE      0x0E
+#define LIGHT_AUTO_READ       0x0D
+
+#define LIGHT_TRACKREC        0x0C
+#define LIGHT_SOLO            0x0B
+#define LIGHT_MUTE            0x0A
+#define LIGHT_SHIFT           0x09
+
+#define LIGHT_PAN             0x06
+#define LIGHT_SEND            0x03
+#define LIGHT_EQ              0x00
+#define LIGHT_PLUGIN          0x14
+#define LIGHT_AUTO            0x10
+
+#define LIGHT_F1              0x05
+#define LIGHT_F2              0x02
+#define LIGHT_F3              0x15
+#define LIGHT_F4              0x11
+
+#define LIGHT_LEFT            0x04
+#define LIGHT_RIGHT           0x01
+#define LIGHT_LOOP            0x16
+#define LIGHT_FLIP            0x13
+
+#define LIGHT_RECORD          0x12
+
 
 
 #define BUTTONMASK_POT_LEFT    0x00000008
@@ -250,11 +276,12 @@ void lights_core(tranzport_t *z, uint32_t buttons, uint32_t buttonmask, uint8_t 
 void do_lights(tranzport_t *z, uint32_t buttons)
 {
 	lights_core(z, buttons, BUTTONMASK_RECORD, LIGHT_RECORD);
+	/*
 	lights_core(z, buttons, BUTTONMASK_TRACKREC, LIGHT_TRACKREC);
 	lights_core(z, buttons, BUTTONMASK_TRACKMUTE, LIGHT_TRACKMUTE);
 	lights_core(z, buttons, BUTTONMASK_TRACKSOLO, LIGHT_TRACKSOLO);
 	lights_core(z, buttons, BUTTONMASK_TRACKSOLO, LIGHT_ANYSOLO);
-	lights_core(z, buttons, BUTTONMASK_LOOP, LIGHT_LOOP);
+	lights_core(z, buttons, BUTTONMASK_LOOP, LIGHT_LOOP); */
 }
 
 void buttons_core(tranzport_t *z, uint32_t buttons, uint32_t buttonmask, char *str)
@@ -338,6 +365,7 @@ void lights_on(tranzport_t *z) {
 	int i;
 	for(i=0;i<23;i++) {
 	tranzport_lighton(z, i, 1000);
+	sleep(1);
 	}
 }
 
@@ -361,7 +389,7 @@ int main()
 		//lights_on(z);
 		//do_lcd2(z);
 		//lights_off(z);
-
+		
 		val = tranzport_read(z, &status, &buttons, &fader, 6000);
 		
 		if ( status == -1 || buttons == -1 || fader == -1)
@@ -371,23 +399,23 @@ int main()
 		
 		if (val < 0)
 			continue;
-
+		
 		if (status == STATUS_OFFLINE) {
 			printf("offline: ");
 			continue;
 		}
-
+		
 		if (status == STATUS_ONLINE) {
 			printf("online: ");
 			do_lcd(z);
 		}
-
+		
 		do_lights(z, buttons);
 		do_buttons(z, buttons, fader);
 	}
-
+	
 	close_tranzport(z);
-
+	
 	return 0;
 }
 
