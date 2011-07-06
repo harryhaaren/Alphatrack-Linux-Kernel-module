@@ -333,25 +333,14 @@ void do_buttons(tranzport_t *z, uint32_t buttons, uint8_t fader)
 
 void do_lcd(tranzport_t *z)
 {
-	tranzport_lcdwrite(z, 0, "    ", 1000);
-	tranzport_lcdwrite(z, 1, "DISL", 1000);
-	tranzport_lcdwrite(z, 2, "EXIA", 1000);
-	tranzport_lcdwrite(z, 3, " FOR", 1000);
-	tranzport_lcdwrite(z, 4, " CUR", 1000);
-	tranzport_lcdwrite(z, 5, "E FO", 1000);
-	tranzport_lcdwrite(z, 6, "UND ", 1000);
-}
-
-void do_lcd2(tranzport_t *z)
-{
-	tranzport_lcdwrite(z, 0, "THE ", 1000);
-	tranzport_lcdwrite(z, 1, "ALPH", 1000);
-	tranzport_lcdwrite(z, 2, "ATRA", 1000);
-	tranzport_lcdwrite(z, 3, "CK  ", 1000);
-	tranzport_lcdwrite(z, 4, "ROCK", 1000);
-	tranzport_lcdwrite(z, 5, "S AW", 1000);
-	tranzport_lcdwrite(z, 6, "ESOM", 1000);
-	tranzport_lcdwrite(z, 7, "ELY ", 1000);
+	tranzport_lcdwrite(z, 0, "  TE", 1000);
+	tranzport_lcdwrite(z, 1, "ST T", 1000);
+	tranzport_lcdwrite(z, 2, "EXT ", 1000);
+	tranzport_lcdwrite(z, 3, "FOR ", 1000);
+	tranzport_lcdwrite(z, 4, "   A", 1000);
+	tranzport_lcdwrite(z, 5, "LPHA", 1000);
+	tranzport_lcdwrite(z, 6, "TRAC", 1000);
+	tranzport_lcdwrite(z, 7, "K   ", 1000);
 }
 
 void lights_off(tranzport_t *z) {
@@ -385,7 +374,7 @@ int main()
 
 	for(;;)
 	{
-		//do_lcd(z);
+		do_lcd(z);
 		//lights_on(z);
 		//do_lcd2(z);
 		//lights_off(z);
