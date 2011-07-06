@@ -54,7 +54,7 @@ enum {
 
 #define STATUS_OFFLINE 0xff
 #define STATUS_ONLINE  0x01
-#define STATUS_OK  0x00
+#define STATUS_OK      0x00
 
 struct tranzport_s {
 	int *dev;
@@ -188,22 +188,34 @@ int tranzport_lightoff(tranzport_t *z, uint8_t light, int timeout)
 
 int tranzport_read(tranzport_t *z, uint8_t *status, uint32_t *buttons, uint8_t *datawheel, int timeout)
 {
-	uint8_t buf[8];
+	uint8_t buf[12];
 	int val;
-	
-	memset(buf, 0xff, 8);
+  
+	memset(buf, 0xff, 12);
+  
 	val = read(z->udev, buf, 8);
+  
 	if (val < 0) {
-		// printf("errno: %d\n",errno);
+		//printf("errno: %d\n",errno);
 		return val;
 	}
-	if (val != 8)
+  else
+  {
+    printf ("tranzport_read: val from read = %i\n", val);
+  }
+  
+  
+	if (val == 8)
+  {
+    printf("val == 8");
+  }
+	if (val != 12)
 		return -1;
-
-	/*printf("read: %02x %02x %02x %02x %02x %02x %02x %02x\n", buf[0], buf[1], buf[2], buf[3], buf[4], buf[5], buf[6], buf[7]);*/
-
+  
+	printf("read: %02x %02x %02x %02x %02x %02x %02x %02x\n", buf[0], buf[1], buf[2], buf[3], buf[4], buf[5], buf[6], buf[7]);
+  
 	*status = buf[1];
-
+  
 	*buttons = 0;
 	*buttons |= buf[2] << 24;
 	*buttons |= buf[3] << 16;
@@ -288,7 +300,7 @@ void do_lcd2(tranzport_t *z)
 	tranzport_lcdwrite(z, 0, "THE ", 1000);
 	tranzport_lcdwrite(z, 1, "ALPH", 1000);
 	tranzport_lcdwrite(z, 2, "ATRA", 1000);
-	tranzport_lcdwrite(z, 3, "CK ", 1000);
+	tranzport_lcdwrite(z, 3, "CK  ", 1000);
 	tranzport_lcdwrite(z, 4, "ROCK", 1000);
 	tranzport_lcdwrite(z, 5, "S AW", 1000);
 	tranzport_lcdwrite(z, 6, "ESOM", 1000);
@@ -312,24 +324,31 @@ void lights_on(tranzport_t *z) {
 int main()
 {
 	tranzport_t *z;
-	uint8_t status;
-	uint32_t buttons;
-	uint8_t datawheel;
-	int val;
+	uint8_t status = -1;
+	uint32_t buttons = -1;
+	uint8_t datawheel = -1;
+	int val = -1;
 
 	z = open_tranzport();
 
-	do_lcd(z);
+	//do_lcd(z);
+  
+  lights_on(z);
 
-	for(;;) {
+	for(;;)
+  {
+    //do_lcd(z);
+    //lights_on(z);
+    //do_lcd2(z);
+    //lights_off(z);
 
-	do_lcd(z);
-	lights_on(z);
-	do_lcd2(z);
-	lights_off(z);
-
-//		val = tranzport_read(z, &status, &buttons, &datawheel, 60000);
- 		val = -1;
+    val = tranzport_read(z, &status, &buttons, &datawheel, 6000);
+ 		
+    if ( status == -1 || buttons == -1 || datawheel == -1)
+    {
+      printf("error in tranzport_read(), returning -1");
+    }
+    
 		if (val < 0)
 			continue;
 
