@@ -84,12 +84,17 @@ class Alphatrack
 {
 	public:
 		
-		std::ofstream file;
+		std::fstream file;
 		
 		Alphatrack(){};
 		
+		~Alphatrack()
+		{
+			printToScreen("                                ");
+		}
+		
 		void connect(std::string name) {
-			file.open("/dev/alphatrack0", std::ios::out | std::ios::app );
+			file.open("/dev/alphatrack0", std::ios::in | std::ios::out | std::ios::app );
 			if ( file.good() )
 			{
 				std::cout << "Connected to Alphatrack!" << std::endl;
@@ -111,6 +116,23 @@ class Alphatrack
 				std::cout << "Error connecting to Alphatrack! Check permissions for /dev/alphatrack0" << std::endl;
 			}
 						
+		}
+		
+		void read()
+		{
+			char buf[12];
+			
+			long begin = file.tellg();
+			file.seekg (0, std::ios::end);
+			long end = file.tellg();
+			
+			std::cout << end - begin << std::endl;
+			
+			if (end - begin > 12)
+			{
+				file.read(buf, 12);
+				printf("read: %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x\n", buf[0], buf[1], buf[2], buf[3], buf[4], buf[5], buf[6], buf[7], buf[8], buf[9], buf[10], buf[11]);
+			}
 		}
 		
 		void allLightsOn()
@@ -140,6 +162,21 @@ class Alphatrack
 			write( &cmd[0] );
 		}
 		void lightOff(int lightNum)
+		{
+			char cmd[8];
+			cmd[0] = 0x00;
+			cmd[1] = 0x00;
+			cmd[2] = lightNum;
+			cmd[3] = 0x00;
+			cmd[4] = 0x00;
+			cmd[5] = 0x00;
+			cmd[6] = 0x00;
+			cmd[7] = 0x00;
+			
+			write( &cmd[0] );
+		}
+		
+		void moveFader(float pos)
 		{
 			char cmd[8];
 			cmd[0] = 0x00;

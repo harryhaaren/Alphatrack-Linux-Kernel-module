@@ -52,8 +52,11 @@
 
 
 #define BUTTONMASK_POT_LEFT    0x00000008
+#define BUTTONMASK_POT_LEFT_PRESS  0x00000009
 #define BUTTONMASK_POT_MIDDLE  0x00000010
+#define BUTTONMASK_POT_MIDDLE_PRESS 0x00008010
 #define BUTTONMASK_POT_RIGHT   0x00000020
+#define BUTTONMASK_POT_RIGHT_PRESS 0x00002000
 
 #define BUTTONMASK_PAN         0x00000200
 #define BUTTONMASK_SEND        0x00000800
@@ -289,8 +292,11 @@ void do_buttons(tranzport_t *z, uint32_t buttons, uint8_t fader)
 	printf("buttons: %x ", buttons);
 	
 	buttons_core(z, buttons, BUTTONMASK_POT_LEFT, "pot-left");
+	buttons_core(z, buttons, BUTTONMASK_POT_LEFT_PRESS, "pot-left-press");
 	buttons_core(z, buttons, BUTTONMASK_POT_MIDDLE, "pot-middle");
+	buttons_core(z, buttons, BUTTONMASK_POT_MIDDLE_PRESS, "pot-middle-press");
 	buttons_core(z, buttons, BUTTONMASK_POT_RIGHT, "pot-right");
+	buttons_core(z, buttons, BUTTONMASK_POT_RIGHT_PRESS, "pot-right-press");
 	
 	buttons_core(z, buttons, BUTTONMASK_PAN, "pan");
 	buttons_core(z, buttons, BUTTONMASK_SEND, "send");
