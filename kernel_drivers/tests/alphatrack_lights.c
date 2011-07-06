@@ -2,6 +2,9 @@
  * tranzport 0.1 <tranzport.sf.net>
  * oct 18, 2005
  * arthur@artcmusic.com
+ * 
+ * updated work with Alphatrack
+ * july 06, 2011 by Harry van Haaren <harryhaaren@gmail.com>
  */
 
 #include <stdarg.h>
@@ -19,14 +22,6 @@
 
 #define READ_ENDPOINT  0x81
 #define WRITE_ENDPOINT 0x02
-
-
-
-
-
-
-
-
 
 #define LIGHT_ANY_SOLO        0x0F
 #define LIGHT_AUTO_WRITE      0x0E
@@ -54,7 +49,6 @@
 #define LIGHT_FLIP            0x13
 
 #define LIGHT_RECORD          0x12
-
 
 
 #define BUTTONMASK_POT_LEFT    0x00000008
