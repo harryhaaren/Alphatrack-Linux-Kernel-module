@@ -1,0 +1,8 @@
+          FRONTIER DEVICES LINUX SUPPORT
+
+This repo is intended to make Frontier's devices more accesible on linux
+I cloned the code from git://toutatis.isc.org/home/d/src/git/frontier.git
+This is my personal repo, and I will try get changes upstream when they're done.
+
+Huge thanks to David Taht for the fantasic work he's done.
+-Harry
