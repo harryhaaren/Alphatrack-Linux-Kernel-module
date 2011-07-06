@@ -38,13 +38,19 @@
 #include <linux/slab.h>
 #include <linux/module.h>
 #include <linux/kobject.h>
-#include <linux/mutex.h>
 #include <linux/version.h>
 
 #include <linux/uaccess.h>
 #include <linux/input.h>
 #include <linux/usb.h>
 #include <linux/poll.h>
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,26)
+#include <linux/semaphore.h>
+#else
+#include <asm/semaphore.h>
+#endif
+#define init_MUTEX(LOCKNAME) sema_init(LOCKNAME,1);
 
 #include "alphatrack.h"
 
